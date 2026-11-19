@@ -1,5 +1,13 @@
 # The Nightmare Before Christmas PS5 Port
 
+<p align="center">
+  <img src="docs/artwork/ps5-icon.png" alt="Oogie's Revenge PS5 tile icon" width="128">
+</p>
+
+<p align="center">
+  <img src="docs/artwork/ps5-backdrop.png" alt="PS5 backdrop featuring Jack Skellington under a bright moon" width="880">
+</p>
+
 An unofficial native PS5 homebrew port of **The Nightmare Before Christmas: Oogie's Revenge**. It builds on [Pallypots' Project Oogie](https://github.com/Pallypots/ProjectOogie), which recompiles the original Xbox version with [XboxRecomp](https://github.com/sp00nznet/xboxrecomp).
 
 **v1.0 is a source release.** Build the PS5 executable locally using your own supported USA Xbox disc image. The release includes neutral launcher art generated during the build. Game files, the ISO, and the locally built executable are supplied by the player.
