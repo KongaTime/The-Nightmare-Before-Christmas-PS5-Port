@@ -10,6 +10,16 @@
 
 An unofficial native PS5 homebrew port of **The Nightmare Before Christmas: Oogie's Revenge**. It builds on [Pallypots' Project Oogie](https://github.com/Pallypots/ProjectOogie), which recompiles the original Xbox version with [XboxRecomp](https://github.com/sp00nznet/xboxrecomp).
 
+## Quick start from the V1.0 ZIP
+
+Use a PS5 setup that already runs native homebrew from `/data/homebrew/` and has FTP access.
+
+1. Download `Nightmare.Before.Christmas.PS5.Port.zip` from [V1.0 Releases](https://github.com/KongaTime/The-Nightmare-Before-Christmas-PS5-Port/releases/tag/v1.0) and unzip it.
+2. Upload the included `PPSA90030` folder to `/data/homebrew/`. The executable should be at `/data/homebrew/PPSA90030/eboot.bin`.
+3. On a fresh install, create `/data/oogie-ps5/saves/` over FTP, with `TitleData`, `UserData`, `Cache`, and `SystemData` inside `saves/`.
+4. Rename your supported USA original Xbox disc image to `Oogie.iso` and upload it to `/data/homebrew/PPSA90030/Oogie.iso`, next to `eboot.bin`.
+5. Refresh your homebrew launcher, open the game, and select **Prepare Game**. Once copying finishes, select **Play Game**.
+
 ## What's included
 
 - A controller-operated launcher with **Prepare Game**, **Play Game**, and **Settings**.
@@ -18,7 +28,9 @@ An unofficial native PS5 homebrew port of **The Nightmare Before Christmas: Oogi
 - Internal render resolution options from 480p to 2160p, enhanced texture filtering, and gameplay brightness.
 - Separate music, dialogue, and effects volume controls, DualSense rumble, and face button remapping.
 
-## 1. Prepare the build tools
+## Build from source (optional)
+
+### 1. Prepare the build tools
 
 Use Linux or WSL2 Ubuntu. You'll need Git, Python 3, CMake, Ninja, glslangValidator, Python Capstone and Pillow (10.1 or newer), and a PS5 homebrew toolchain with the Prospero compiler and CMake files. The build expects `~/ps5-sdk` and `~/PS5_Vulkan` by default. You can override those paths with `PS5_SDK` and `PS5_VULKAN_DIR`.
 
@@ -38,7 +50,7 @@ git -C ~/oogie-work/xboxrecomp checkout --detach eb0aa1d5fcb1ca34cdb6470fcfa471d
 
 The Darkness checkout supplies shared PS5 compatibility headers and the portable SHA-256 helper used to verify the disc. The XboxRecomp checkout supplies the compiler and runtime. Follow each dependency's own build and license instructions.
 
-## 2. Build with your disc
+### 2. Build with your disc
 
 Use the **USA original Xbox** edition (title ID `42560004`). The port checks the exact supported `default.xbe`.
 
@@ -51,7 +63,7 @@ OOGIE_TUNE_GUEST=ON OOGIE_PASS_CONTEXT=ON bash ps5/tools/build.sh
 
 The expected executable SHA-256 is `9a8319c7b1cb5ee29781bf641a0cf549c221fdc57effb8f72085608019f41548`. Use the original matching disc build if it differs. The compiler writes generated code to `~/oogie-work/gen`. The build writes the install folder to `ps5/build/dist/PPSA90030/`.
 
-## 3. Install and prepare the game on PS5
+### 3. Install your local build and prepare the game on PS5
 
 Use a PS5 setup that already supports launching native homebrew from `/data/homebrew` and has a working FTP service. From the repository root, run this with your console's LAN address and FTP port:
 
