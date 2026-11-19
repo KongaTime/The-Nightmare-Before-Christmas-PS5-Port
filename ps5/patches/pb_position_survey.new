@@ -1,0 +1,5 @@
+    /* Position range is diagnostic. Sample one in 64 draws by default. */
+    static int full_position_survey = -1;
+    if (full_position_survey < 0)
+        full_position_survey = getenv("RECOMP_PB_EXEC_VERBOSE") != NULL;
+    if (full_position_survey || (s_gpu.draws & 63u) == 1u) {

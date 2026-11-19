@@ -1,0 +1,131 @@
+static void gcpu_enter(void)
+{
+    unsigned t;
+    int p = oogie_prio_get(g_thread_obj_va), i;     /* guest_priority_table */
+    static RECOMP_TLS int t_gcpu_seen;
+    if (t_gcpu_seen != p + 100) {
+        t_gcpu_seen = p + 100;
+        fprintf(stderr, "  [GCPU] host thread %lu (thread object 0x%08X) wants the guest CPU at priority %d\n",
+                (unsigned long)GetCurrentThreadId(), g_thread_obj_va, p);
+    }
+    AcquireSRWLockExclusive(&g_gcpu_m);
+    if (g_gcpu_fifo < 0) {
+        const char *e = getenv("OOGIE_GCPU_FIFO");
+        g_gcpu_fifo = e && *e == '1';
+    }
+    if (g_gcpu_fifo) p = 0;
+    if (g_gcpu_starve_ms < 0) {
+        const char *e = getenv("OOGIE_GCPU_STARVE_MS");
+        g_gcpu_starve_ms = e && *e ? atoi(e) : 50;
+    }
+    t = g_gcpu_next++;
+    if (g_gcpu_busy && p > g_gcpu_holder_p)
+        g_gcpu_preempt = 1;
+    if (g_gcpu_nw < GCPU_MAXW) {
+        g_gcpu_w[g_gcpu_nw].t = t;
+        g_gcpu_w[g_gcpu_nw].p = p;
+        g_gcpu_w[g_gcpu_nw].since = GetTickCount64();
+        g_gcpu_nw++;
+    }
+    {
+        /* every 10 s: how often the CPU changed hands and how long threads
+         * waited for it (OOGIE_GCPU_STATS=0: no report) */
+        static ULONGLONG t0;
+        static unsigned takes, waits;
+        static double wait_ms;
+        static int on = -1;
+        ULONGLONG now = GetTickCount64();
+        if (on < 0) { const char *e = getenv("OOGIE_GCPU_STATS"); on = !(e && *e == '0'); }
+        takes++;
+        if (g_gcpu_busy) {
+            LARGE_INTEGER a, b, f;
+            QueryPerformanceCounter(&a);
+            waits++;
+            for (;;) {
+                int best = gcpu_best(GetTickCount64());
+                if (!g_gcpu_busy && (best < 0 || g_gcpu_w[best].t == t)) break;
+                {
+                    /* Time slice among equals (OOGIE_GCPU_QUANTUM_MS, default
+                     * 10; 0 = none): a holder of the same priority that has
+                     * run that long steps aside at its next safepoint. */
+                    static int q = -1;
+                    if (q < 0) { const char *e = getenv("OOGIE_GCPU_QUANTUM_MS"); q = e && *e ? atoi(e) : 10; }
+                    int timed_out = !SleepConditionVariableSRW(&g_gcpu_cv, &g_gcpu_m,
+                            q > 0 || g_gcpu_starve_ms > 0 ? (DWORD)(q > 0 ? q : 10) : INFINITE, 0);
+                    /* starved: the holder steps aside at its next safepoint */
+                    gcpu_slow_wake(p);
+                    if (timed_out && g_gcpu_busy && g_gcpu_starve_ms > 0) {
+                        int k;
+                        ULONGLONG nw = GetTickCount64();
+                        for (k = 0; k < g_gcpu_nw; k++)
+                            if (g_gcpu_w[k].t == t && gcpu_eff(k, nw) > g_gcpu_holder_p)
+                                g_gcpu_preempt = 1;
+                    }
+                    if (timed_out && q > 0 && g_gcpu_busy && p >= g_gcpu_holder_p) {
+                        LARGE_INTEGER nw;
+                        QueryPerformanceCounter(&nw);
+                        if (!g_gcpu_qpf.QuadPart) QueryPerformanceFrequency(&g_gcpu_qpf);
+                        if ((nw.QuadPart - g_gcpu_held_at.QuadPart) * 1000 >= (LONGLONG)q * g_gcpu_qpf.QuadPart)
+                            g_gcpu_preempt = 1;
+                    }
+                }
+            }
+            QueryPerformanceCounter(&b); QueryPerformanceFrequency(&f);
+            wait_ms += (double)(b.QuadPart - a.QuadPart) * 1000.0 / (double)f.QuadPart;
+        }
+        if (!t0) t0 = now;
+        if (on && now - t0 >= 10000) {
+            int k, top[5] = { -1, -1, -1, -1, -1 }, m;
+            double total = 0;
+            for (k = 0; k < GCPU_HOLD_N; k++) total += g_gcpu_hold_ms[k];
+            for (m = 0; m < 5; m++)
+                for (k = 0; k < GCPU_HOLD_N; k++) {
+                    int dup = 0, q;
+                    for (q = 0; q < m; q++) if (top[q] == k) dup = 1;
+                    if (!dup && g_gcpu_hold_id[k] && (top[m] < 0 || g_gcpu_hold_ms[k] > g_gcpu_hold_ms[top[m]]))
+                        top[m] = k;
+                }
+            fprintf(stderr, "  [GCPU] 10 s: %u takes, %u had to wait, %.0f ms waited in all; CPU held %.0f ms:",
+                    takes, waits, wait_ms, total);
+            for (m = 0; m < 5; m++)
+                if (top[m] >= 0 && g_gcpu_hold_ms[top[m]] >= 1)
+                    fprintf(stderr, " %lu(p%d) %.0f ms", (unsigned long)g_gcpu_hold_id[top[m]],
+                            g_gcpu_hold_p[top[m]], g_gcpu_hold_ms[top[m]]);
+            fprintf(stderr, "\n");
+            for (k = 0; k < GCPU_HOLD_N; k++) g_gcpu_hold_ms[k] = 0;
+            t0 = now; takes = waits = 0; wait_ms = 0;
+        }
+    }
+    for (;;) {
+        ULONGLONG nw = GetTickCount64();
+        int best = gcpu_best(nw);
+        if (!g_gcpu_busy && (best < 0 || g_gcpu_w[best].t == t)) {
+            if (best >= 0) {
+                static volatile LONG s_starve_logs;
+                if (gcpu_eff(best, nw) > g_gcpu_w[best].p) {
+                    int k, above = 0;
+                    for (k = 0; k < g_gcpu_nw; k++) if (g_gcpu_w[k].p > g_gcpu_w[best].p) above = 1;
+                    if (above && InterlockedIncrement(&s_starve_logs) <= 20)
+                        fprintf(stderr, "  [GCPU] starvation guard: host thread %lu (priority %d) waited %llu ms, runs ahead of higher priorities\n",
+                                (unsigned long)GetCurrentThreadId(), g_gcpu_w[best].p,
+                                (unsigned long long)(nw - g_gcpu_w[best].since));
+                }
+                g_gcpu_w[best] = g_gcpu_w[--g_gcpu_nw];
+            }
+            break;
+        }
+        SleepConditionVariableSRW(&g_gcpu_cv, &g_gcpu_m, g_gcpu_starve_ms > 0 ? 10 : INFINITE, 0);
+        gcpu_slow_wake(p);
+    }
+    g_gcpu_busy = 1;
+    g_gcpu_holder_p = p;
+    {
+        /* still a waiter above the new holder? */
+        int k, hi = 0;
+        ULONGLONG nw = GetTickCount64();
+        for (k = 0; k < g_gcpu_nw; k++) if (gcpu_eff(k, nw) > p) hi = 1;
+        g_gcpu_preempt = hi;
+    }
+    QueryPerformanceCounter(&g_gcpu_held_at);
+    ReleaseSRWLockExclusive(&g_gcpu_m);
+}

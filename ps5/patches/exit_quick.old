@@ -1,0 +1,1 @@
+VOID ExitProcess(UINT exitCode) { exit((int)exitCode); }

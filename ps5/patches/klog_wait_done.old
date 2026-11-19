@@ -1,0 +1,4 @@
+    g_eax = (uint32_t)xbox_KeWaitForSingleObject(
+        h, wait_reason, wait_mode,
+        (BOOLEAN)alertable, XBOX_TO_NATIVE(timeout_ptr));
+}

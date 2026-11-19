@@ -1,0 +1,3 @@
+static void *thread_trampoline(void *arg)
+{
+    w32_object *o = (w32_object *)arg;

@@ -1,0 +1,4 @@
+            g_eax = (uint32_t)xbox_KeWaitForSingleObject(
+                ge, wait_reason, wait_mode,
+                (BOOLEAN)alertable, XBOX_TO_NATIVE(timeout_ptr));
+            if (g_eax == 0 && type == 1)               /* synchronization: consumed */

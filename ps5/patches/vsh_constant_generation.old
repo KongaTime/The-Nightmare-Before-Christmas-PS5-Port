@@ -1,0 +1,1 @@
+static float    s_const[NV2A_VSH_CONSTANTS][4];

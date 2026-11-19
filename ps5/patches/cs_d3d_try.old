@@ -1,0 +1,2 @@
+VOID __stdcall xbox_RtlEnterCriticalSection(PRTL_CRITICAL_SECTION CriticalSection)
+{

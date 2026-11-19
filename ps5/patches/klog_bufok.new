@@ -1,0 +1,4 @@
+            export_name, va, (unsigned)bytes);
+    fflush(stderr);
+    { char _b[160]; snprintf(_b, sizeof _b, "BUF-REJECT %s va=%08X len=%u", export_name, va, (unsigned)bytes); klog_line(_b); }
+    return 0;

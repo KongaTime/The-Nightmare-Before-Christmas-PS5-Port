@@ -1,0 +1,19 @@
+                    got > 2 ? p[2] : 0, got > 3 ? p[3] : 0);
+        fflush(stderr);
+        {
+            static int _n;
+            if (_n < 250 || (ios.Status != 0 && _n < 400)) {
+                char _b[200];
+                _n++;
+                snprintf(_b, sizeof _b,
+                         "READ c=%08X buf=%08X @%lld want=%u got=%u st=%08X %02X%02X%02X%02X",
+                         g_xbox_kernel_caller, buffer_va,
+                         poff ? (long long)off.QuadPart : -1LL, length, got,
+                         (uint32_t)ios.Status,
+                         got > 0 ? p[0] : 0, got > 1 ? p[1] : 0,
+                         got > 2 ? p[2] : 0, got > 3 ? p[3] : 0);
+                klog_line(_b);
+            }
+        }
+    }
+    bridge_write_iostatus(iostatus, ios.Status, (uint32_t)ios.Information);

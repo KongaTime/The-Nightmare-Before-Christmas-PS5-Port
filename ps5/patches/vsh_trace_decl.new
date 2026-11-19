@@ -1,0 +1,5 @@
+/* PS5 diagnostic: set by the executor's sampler to trace one vertex. */
+volatile int g_vsh_trace;
+
+int nv2a_vsh_run(const float in[NV2A_VSH_INPUTS][4], Nv2aVshOutput *out)
+{

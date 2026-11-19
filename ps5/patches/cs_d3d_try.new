@@ -1,0 +1,23 @@
+/* The fast dispatch path already holds the guest CPU. Only take the
+ * device lock if it can be acquired immediately. */
+int oogie_ps5_try_d3d_cs(void *critical_section, uint32_t caller, DWORD tid)
+{
+    CRITICAL_SECTION *cs = xbox_cs_shadow(critical_section);
+    if (!cs || !TryEnterCriticalSection(cs))
+        return 0;
+    if (g_cs_stats_on < 0)
+        g_cs_stats_on = oogie_flag("cs_stats", 0);
+    if (g_cs_stats_on)
+        InterlockedIncrement(&g_cs_enters);
+    crt_lock_trace("take", critical_section);
+    XBOX_CS_SLOT *slot = xbox_cs_slot_of(cs);
+    if (slot) {
+        slot->owner_site = caller;
+        slot->owner_tid = tid;
+        slot->depth++;
+    }
+    return 1;
+}
+
+VOID __stdcall xbox_RtlEnterCriticalSection(PRTL_CRITICAL_SECTION CriticalSection)
+{

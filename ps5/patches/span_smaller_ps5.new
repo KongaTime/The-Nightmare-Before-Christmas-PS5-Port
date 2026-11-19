@@ -1,0 +1,9 @@
+        g_span_size = g_memory_size * (size_t)(1 + XBOX_NUM_MIRRORS);
+        /* PS5: the span reserve is charged against the sandbox's mapping
+         * budget and at 29 mirrors (1.85 GB) it starves the tiled
+         * aperture's file view (measured: ~13 MB of file views left
+         * after the span, independent of the mirror count). Clamp it to
+         * the base view plus the mirrors we actually create (see
+         * mirrors_fewer_ps5): base + 8 mirrors = 9 * 64 MB = 576 MB. */
+        if (g_span_size > (size_t)9 * g_memory_size)
+            g_span_size = (size_t)9 * g_memory_size;

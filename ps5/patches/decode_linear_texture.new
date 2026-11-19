@@ -1,0 +1,46 @@
+/* A whole linear texture never needs to wrap coordinates or query format
+ * state per texel. Keep the sampler for every other format and layout. */
+static int decode_linear_texture(const Nv2aTexture *tex, uint32_t *out)
+{
+    uint32_t bpp;
+    switch (tex->color) {
+    case 0x13: case 0x1F: bpp = 1; break;  /* L8, A8 */
+    case 0x12: case 0x1E: bpp = 4; break;  /* ARGB, XRGB */
+    default: return 0;
+    }
+    uint64_t row_bytes = (uint64_t)tex->width * bpp;
+    if (!tex->width || !tex->height || row_bytes > tex->pitch)
+        return 0;
+    uint64_t bytes = (uint64_t)(tex->height - 1) * tex->pitch + row_bytes;
+    if (bytes > UINT32_MAX || !guest_span_ok(tex->offset, (uint32_t)bytes))
+        return 0;
+    const uint8_t *src = (const uint8_t *)xbox_GetMemoryOffset() + tex->offset;
+    for (uint32_t y = 0; y < tex->height; ++y, src += tex->pitch, out += tex->width) {
+        switch (tex->color) {
+        case 0x12:
+            memcpy(out, src, (size_t)row_bytes);
+            break;
+        case 0x1E:
+            for (uint32_t x = 0; x < tex->width; ++x) {
+                uint32_t pixel;
+                memcpy(&pixel, src + (size_t)x * 4u, sizeof pixel);
+                out[x] = pixel | 0xFF000000u;
+            }
+            break;
+        case 0x13:
+            for (uint32_t x = 0; x < tex->width; ++x)
+                out[x] = 0xFF000000u | ((uint32_t)src[x] * 0x00010101u);
+            break;
+        case 0x1F:
+            for (uint32_t x = 0; x < tex->width; ++x)
+                out[x] = ((uint32_t)src[x] << 24) | 0x00FFFFFFu;
+            break;
+        }
+    }
+    return 1;
+}
+
+int nv2a_backend_decode_texture(const Nv2aTexture *tex, uint32_t *argb_out)
+{
+    if (decode_linear_texture(tex, argb_out))
+        return 1;

@@ -1,0 +1,111 @@
+static void klog_line(const char *s)
+{
+    sceKernelDebugOutText(0, s);
+}
+
+/* PS5 port: a heartbeat. Every guest thread's last kernel ordinal, its guest
+ * caller and first argument, and how many calls it has made, logged every
+ * 3 s -- so a title that stops presenting says which thread is parked where.
+ * A thread that has made no kernel call since the last tick is sampled with
+ * SIGUSR2: its host rip (relative to oogie_hb_note) and the guest return
+ * addresses on its guest stack, which locate a guest-side spin. */
+#include <pthread.h>
+#include <errno.h>
+#include <unistd.h>
+#include <signal.h>
+#include <ucontext.h>
+#define OOGIE_HB_SLOTS 24
+extern ptrdiff_t g_xbox_mem_offset;
+extern RECOMP_TLS uint32_t g_esp;
+static volatile uint32_t s_hb_ord[OOGIE_HB_SLOTS], s_hb_caller[OOGIE_HB_SLOTS],
+                         s_hb_arg[OOGIE_HB_SLOTS], s_hb_n[OOGIE_HB_SLOTS],
+                         s_hb_fs[OOGIE_HB_SLOTS], s_hb_lastn[OOGIE_HB_SLOTS];
+static volatile unsigned long s_hb_tid[OOGIE_HB_SLOTS];
+static pthread_t s_hb_pt[OOGIE_HB_SLOTS];
+static volatile uintptr_t s_hb_rip[OOGIE_HB_SLOTS];
+static volatile uint32_t s_hb_gesp[OOGIE_HB_SLOTS], s_hb_ret[OOGIE_HB_SLOTS][8];
+static volatile int s_hb_sampled[OOGIE_HB_SLOTS];
+static volatile int s_hb_used;
+static volatile long long s_hb_total;
+static __thread int s_hb_me = -1;
+static void oogie_hb_note(uint32_t ord, uint32_t caller, uint32_t arg0);
+static void oogie_hb_sig(int sig, siginfo_t *si, void *ucv)
+{
+    int me = s_hb_me, k = 0, i;
+    ucontext_t *uc = (ucontext_t *)ucv;
+    (void)sig; (void)si;
+    if (me < 0) return;
+    s_hb_rip[me] = (uintptr_t)uc->uc_mcontext.mc_rip;
+    s_hb_gesp[me] = g_esp;
+    if (g_esp) {
+        const uint32_t *sp = (const uint32_t *)((uintptr_t)g_xbox_mem_offset + g_esp);
+        for (i = 0; i < 512 && k < 8; i++) {
+            uint32_t v = sp[i];
+            if (v >= 0x00011000u && v < 0x00400000u) s_hb_ret[me][k++] = v;
+        }
+    }
+    for (; k < 8; k++) s_hb_ret[me][k] = 0;
+    s_hb_sampled[me] = 1;
+}
+static void *oogie_hb_thread(void *arg)
+{
+    int tick;
+    (void)arg;
+    {
+        struct sigaction sa;
+        memset(&sa, 0, sizeof sa);
+        sa.sa_sigaction = oogie_hb_sig;
+        sa.sa_flags = SA_SIGINFO | SA_RESTART;
+        sigaction(SIGUSR2, &sa, NULL);
+    }
+    for (tick = 1; tick < 400; tick++) {
+        char b[2000];
+        int i, o, used = s_hb_used;
+        usleep(tick < 40 ? 3000000 : 15000000);
+        if (used > OOGIE_HB_SLOTS) used = OOGIE_HB_SLOTS;
+        o = snprintf(b, sizeof b, "[HB] tick=%d calls=%lld", tick, s_hb_total);
+        for (i = 0; i < used && o < (int)sizeof b - 90; i++)
+            o += snprintf(b + o, sizeof b - o, " |T%d h%lu f%08X i%u o%u c%08X a%08X n%u", i, s_hb_tid[i], s_hb_fs[i], s_hb_fs[i] ? (unsigned)*(volatile uint8_t *)((uintptr_t)g_xbox_mem_offset + s_hb_fs[i] + 0x24) : 999u,
+                          s_hb_ord[i], s_hb_caller[i], s_hb_arg[i], s_hb_n[i]);
+        klog_line(b);
+        if (tick % 5 == 0) { extern void nv2a_pb_exec_report(void); nv2a_pb_exec_report(); }
+        /* Sample threads that made no kernel call since the last tick. */
+        if (tick >= 2 && tick < 40) {
+            for (i = 0; i < used; i++) {
+                if (s_hb_n[i] != s_hb_lastn[i]) { s_hb_lastn[i] = s_hb_n[i]; continue; }
+                s_hb_sampled[i] = 0;
+                if (pthread_kill(s_hb_pt[i], SIGUSR2) != 0) continue;
+                usleep(30000);
+                if (s_hb_sampled[i]) {
+                    snprintf(b, sizeof b, "[HB-STUCK] T%d rip-rel=%ld gesp=%08X ret %08X %08X %08X %08X %08X %08X %08X %08X",
+                             i, (long)(s_hb_rip[i] - (uintptr_t)(void *)oogie_hb_note), s_hb_gesp[i],
+                             s_hb_ret[i][0], s_hb_ret[i][1], s_hb_ret[i][2], s_hb_ret[i][3],
+                             s_hb_ret[i][4], s_hb_ret[i][5], s_hb_ret[i][6], s_hb_ret[i][7]);
+                    klog_line(b);
+                }
+            }
+        }
+    }
+    return NULL;
+}
+static void oogie_hb_note(uint32_t ord, uint32_t caller, uint32_t arg0)
+{
+    static volatile int started;
+    if (!started && __sync_bool_compare_and_swap(&started, 0, 1)) {
+        pthread_t th;
+        pthread_create(&th, NULL, oogie_hb_thread, NULL);
+    }
+    if (s_hb_me < 0) {
+        int me = __sync_fetch_and_add(&s_hb_used, 1);
+        if (me >= OOGIE_HB_SLOTS) me = OOGIE_HB_SLOTS - 1;
+        s_hb_me = me;
+        s_hb_pt[me] = pthread_self();
+    }
+    s_hb_ord[s_hb_me] = ord;
+    s_hb_tid[s_hb_me] = (unsigned long)GetCurrentThreadId();
+    s_hb_fs[s_hb_me] = g_fs_base;
+    s_hb_caller[s_hb_me] = caller;
+    s_hb_arg[s_hb_me] = arg0;
+    s_hb_n[s_hb_me]++;
+    s_hb_total++;
+}

@@ -1,0 +1,2 @@
+    extern int oogie_pb_geometry_burst(uint32_t, const uint32_t *, uint32_t);
+    if (s_exec_enabled && !s_survey_enabled && s_pend_noninc && !s_pend_subch &&

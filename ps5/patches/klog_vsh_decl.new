@@ -1,0 +1,3 @@
+extern int nv2a_pb_dma_walk(void);   /* nv2a_pb_scan.c: RECOMP_PB_WALK=dma */
+static unsigned s_vsh_words;        /* PS5 diagnostic: TRANSFORM_PROGRAM words
+                                     * the executor has been handed */

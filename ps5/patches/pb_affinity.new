@@ -1,0 +1,4 @@
+    unsigned idle_ticks = 0;
+    extern void oogie_ps5_affinity(unsigned);
+    oogie_ps5_affinity(1);
+    while (!InterlockedCompareExchange(&g_nv2a_ack_stop, 0, 0)) {

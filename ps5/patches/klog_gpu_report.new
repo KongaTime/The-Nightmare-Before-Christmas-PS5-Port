@@ -1,0 +1,29 @@
+void nv2a_pb_exec_report(void)
+{
+    /* PS5: the report's fprintf(stderr) does not reach the console kernel
+     * log, so mirror one summary line of what the executor saw and did.
+     * clears/draws/xf_drawn accept-or-skip counts say which half of the
+     * game's draws the software path is missing. */
+    {
+        char kline[512];
+        snprintf(kline, sizeof kline,
+                 "[GPU] surface 0x%08X pitch %u clears %u draws %u verts %u "
+                 "prim %u tris %u skip %u offscr %u vp %u ffp %u xf-drawn %u "
+                 "xfmode %u comp %d tex %u/nouv %u/notex %u x %.0f..%.0f "
+                 "y %.0f..%.0f px %llu brightest 0x%08X vshwords %u "
+                 "behind %u degen %u xfoff %u vpverts %u\n",
+                 s_gpu.color_offset, s_gpu.pitch, s_gpu.clears,
+                 s_gpu.nonzero_draws, s_gpu.verts, s_gpu.prim,
+                 s_gpu.tris_drawn, s_gpu.batches_untransformed,
+                 s_gpu.tris_skipped_offscreen, s_gpu.batches_program,
+                 s_gpu.batches_ffp, s_gpu.xf_drawn,
+                 s_gpu.xf_mode, s_gpu.composite_set,
+                 s_gpu.batches_textured, s_gpu.batches_no_uv,
+                 s_gpu.batches_no_tex,
+                 s_gpu.min_x, s_gpu.max_x, s_gpu.min_y, s_gpu.max_y,
+                 (unsigned long long)s_gpu.pixels, s_gpu.pixel_max,
+                 s_vsh_words, s_gpu.tris_behind, s_gpu.xf_degenerate, s_gpu.xf_offscreen, s_gpu.verts_program);
+        extern int sceKernelDebugOutText(int channel, const char *text);
+        sceKernelDebugOutText(0, kline);
+    }
+    peek_addresses();

@@ -1,0 +1,22 @@
+        {
+            /* PS5 port (would hold on PC too): a vertex whose clip w is 0 or
+             * not finite made 1/w infinite, every texture coordinate across
+             * the triangle NaN, and the combiners' NaN packed as black --
+             * Oogie's Bink movie quads (screen-space, w = 0) drew pure black
+             * over real Y/U/V planes. The NV2A, as xemu models it, treats
+             * such a w as 1. */
+            float w = v[k]->pos[3];
+            if (w == 0.0f || w != w || w > 3.0e38f || w < -3.0e38f) {
+                static volatile int w_logs;
+                if (w_logs < 6 && __sync_fetch_and_add(&w_logs, 1) < 6) {
+                    extern int sceKernelDebugOutText(int, const char *);
+                    char wb[200];
+                    snprintf(wb, sizeof wb, "[XF] bad w=%g pos=%g,%g,%g tex0=%g,%g,%g,%g -> w=1",
+                             w, v[k]->pos[0], v[k]->pos[1], v[k]->pos[2],
+                             v[k]->tex[0][0], v[k]->tex[0][1], v[k]->tex[0][2], v[k]->tex[0][3]);
+                    sceKernelDebugOutText(0, wb);
+                }
+                w = 1.0f;
+            }
+            T.iw[k] = 1.0f / w;
+        }

@@ -1,0 +1,43 @@
+    {
+        static DWORD last_summary_tick = 0;
+        /* Oogie patch (port/patches/kernel_summary_quiet): the two-second
+         * call summary off under OOGIE_QUIET_GPU=1 (play.bat), as the other
+         * periodic GPU-thread logging. */
+        static int quiet = -1;
+        if (quiet < 0) { const char *q = getenv("OOGIE_QUIET_GPU"); quiet = q && *q && *q != '0'; }
+        /* Sampling the clock once per 256 calls bounds diagnostic overhead
+         * in tight polling loops. The next sampled call emits the report. */
+        if (!quiet && (g_kernel_call_count & 255) == 0) {
+            DWORD now = GetTickCount();
+            if (!last_summary_tick)
+                last_summary_tick = now;
+            if (now - last_summary_tick >= 2000) {
+                fprintf(stderr, "  [KERNEL] summary: %lld total calls, latest ordinal %u (slot %d) esp=0x%08X\n",
+                        g_kernel_call_count, ordinal, slot, g_esp);
+                /* And which ones, ranked. "Latest" names whatever the sample
+                 * happened to land on; the question behind this line is what a
+                 * title sitting still is actually asking the kernel for, and
+                 * that wants counting rather than sampling. */
+                {
+                    static unsigned char shown_ord[XBOX_KERNEL_THUNK_TABLE_SIZE];
+                    int r, shown;
+
+                    memset(shown_ord, 0, sizeof shown_ord);
+                    for (shown = 0; shown < 6; shown++) {
+                        int best = -1;
+                        for (r = 0; r < XBOX_KERNEL_THUNK_TABLE_SIZE; r++)
+                            if (g_ordinal_calls[r] && !shown_ord[r]
+                                && (best < 0 || g_ordinal_calls[r] > g_ordinal_calls[best]))
+                                best = r;
+                        if (best < 0)
+                            break;
+                        shown_ord[best] = 1;
+                        fprintf(stderr, "  [KERNEL]   ordinal %3d x%llu\n", best,
+                                (unsigned long long)g_ordinal_calls[best]);
+                    }
+                }
+                fflush(stderr);
+                last_summary_tick = now;
+            }
+        }
+    }

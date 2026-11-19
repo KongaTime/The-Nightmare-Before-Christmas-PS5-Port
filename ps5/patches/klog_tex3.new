@@ -1,0 +1,48 @@
+static int sample_tex(const Texture *t, uint32_t face_offset,
+                      uint32_t u, uint32_t v, uint32_t *argb)
+{
+    const uint8_t *mem = (const uint8_t *)xbox_GetMemoryOffset();
+    const uint8_t *p;
+    uint32_t fmt, base = t->offset + face_offset;
+
+    if (!t->valid)
+        return 0;
+    {
+        /* PS5 port probe: per distinct texture, how much of it is nonzero
+         * in the contiguous window (va) and in low RAM (phys). Re-measured
+         * every 4096 samples so a late upload shows up as a changed count. */
+        static struct { uint32_t off, nz_va, nz_ph; } seen[64];
+        static int nseen, nlogs;
+        static uint32_t calls;
+        int i, found = -1;
+        for (i = 0; i < nseen; i++)
+            if (seen[i].off == base) { found = i; break; }
+        if ((found < 0 || (calls & 4095u) == 0) && nlogs < 160) {
+            uint32_t w = t->width, h = t->height, bytes, phys = base, k;
+            uint32_t nz_va = 0, nz_ph = 0;
+            if (t->color == 0x0C) bytes = w * h / 2;
+            else if (t->color == 0x0E || t->color == 0x0F) bytes = w * h;
+            else bytes = w * h * 4;
+            if (bytes > (1u << 20)) bytes = 1u << 20;
+            if (phys >= XBOX_CONTIG_BASE
+                && (uint64_t)phys < (uint64_t)XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE)
+                phys -= XBOX_CONTIG_BASE;
+            if ((uint64_t)phys + bytes > XBOX_CONTIG_SIZE) bytes = 0;
+            for (k = 0; k < bytes; k += 4) {
+                nz_va += *(const uint32_t *)(mem + base + k) != 0;
+                nz_ph += *(const uint32_t *)(mem + phys + k) != 0;
+            }
+            if (found < 0 || seen[found].nz_va != nz_va || seen[found].nz_ph != nz_ph) {
+                char kl[300];
+                if (found < 0 && nseen < 64) found = nseen++;
+                if (found >= 0) { seen[found].off = base; seen[found].nz_va = nz_va; seen[found].nz_ph = nz_ph; }
+                snprintf(kl, sizeof kl,
+                         "[TEX3] off=0x%08X fmt=0x%02X %ux%u pitch=%u bytes=%u nzwords va=%u phys=%u call=%u\n",
+                         base, t->color, w, h, t->pitch, bytes, nz_va, nz_ph, calls);
+                extern int sceKernelDebugOutText(int, const char *);
+                sceKernelDebugOutText(0, kl);
+                nlogs++;
+            }
+        }
+        calls++;
+    }

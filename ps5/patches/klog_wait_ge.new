@@ -1,0 +1,5 @@
+            g_eax = (uint32_t)xbox_KeWaitForSingleObject(
+                ge, wait_reason, wait_mode,
+                (BOOLEAN)alertable, XBOX_TO_NATIVE(timeout_ptr));
+            { char _b[128]; snprintf(_b, sizeof _b, "WAIT-GE object=0x%08X result=0x%08X", (unsigned)object, (unsigned)g_eax); klog_line(_b); }
+            if (g_eax == 0 && type == 1)               /* synchronization: consumed */

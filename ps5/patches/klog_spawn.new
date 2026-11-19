@@ -1,0 +1,11 @@
+                    {
+                        HANDLE _th = bridge_spawn_guest_thread(fn, start_context1, start_context2,
+                                                  stack_top, xbox_handle_ptr,
+                                                  tls_size);
+                        char _b[200];
+                        snprintf(_b, sizeof _b, "SPAWN #%d routine=%08X ctx=%08X stack=%08X -> %s (errno %d) handle=%08X",
+                                 g_thread_call_count, start_routine, start_context1, stack_top,
+                                 _th ? "ok" : "FAILED", _th ? 0 : errno,
+                                 xbox_handle_ptr ? BRIDGE_MEM32(xbox_handle_ptr) : 0);
+                        klog_line(_b);
+                    }

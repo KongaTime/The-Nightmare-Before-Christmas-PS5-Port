@@ -1,0 +1,5 @@
+    { static int _n; if (_n++ < 120) { char _b[160]; snprintf(_b, sizeof _b, "CONTIG-EX c=%08X size=%u align=%u -> %08X", g_xbox_kernel_caller, size, align, xbox_va); klog_line(_b); } }
+    g_eax = xbox_va;
+}
+
+/* ── MmFreeContiguousMemory

@@ -1,0 +1,35 @@
+static int sample_tex(const Texture *t, uint32_t face_offset,
+                      uint32_t u, uint32_t v, uint32_t *argb)
+{
+    const uint8_t *mem = (const uint8_t *)xbox_GetMemoryOffset();
+    const uint8_t *p;
+    /* The bound offset is a contiguous-window VA (0x80000000 + physical).
+     * Texture bytes are uploaded into physical low memory by the guest/DMA,
+     * while this runtime keeps the contiguous window as a separate mapping
+     * from RAM -- reading the VA gives a zero page. Resolve the offset the
+     * same way surfaces resolve DMA-object offsets: read the physical copy. */
+    uint32_t base = t->offset + face_offset;
+    if (base >= XBOX_CONTIG_BASE
+        && (uint64_t)base < (uint64_t)XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE)
+        base -= XBOX_CONTIG_BASE;
+    uint32_t fmt = t->color;
+
+    if (!t->valid)
+        return 0;
+    {
+        /* PS5 diagnostic: texture state + first texel per texture. */
+        static int tlog;
+        if (tlog++ < 8) {
+            char kl[320];
+            snprintf(kl, sizeof kl,
+                     "[TEX] off=0x%08X face=0x%X fmt=0x%02X %ux%u pitch=%u addr=%u/%u u=%u v=%u raw=%08X %08X %08X %08X\n",
+                     t->offset, face_offset, t->color, t->width, t->height,
+                     t->pitch, t->addr_u, t->addr_v, u, v,
+                     *(const uint32_t *)(mem + base),
+                     *(const uint32_t *)(mem + base + 4),
+                     *(const uint32_t *)(mem + base + 8),
+                     *(const uint32_t *)(mem + base + 12));
+            extern int sceKernelDebugOutText(int, const char *);
+            sceKernelDebugOutText(0, kl);
+        }
+    }

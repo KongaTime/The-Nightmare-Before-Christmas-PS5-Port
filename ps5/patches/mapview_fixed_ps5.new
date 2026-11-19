@@ -1,0 +1,33 @@
+#else
+        /* The PS5 SDK does not define MAP_FIXED_NOREPLACE and the console's
+         * kernel would not honour the flag either, so this branch used to fall
+         * through to plain MAP_FIXED -- and on the PS5 that is fatal: the
+         * guest base hint is 0x10000 and the running module (and its 11
+         * libraries) live at 0x400000, so the very first fixed mapping
+         * silently unmaps the process's own code and the next instruction
+         * faults. Claim the range first the way the __APPLE__ branch above
+         * does with mach_vm_map: a PROT_NONE reservation, which the kernel
+         * places exactly at the requested address only when that range is
+         * still free and never displaces anything. If the kernel put the
+         * reservation somewhere else, the range was occupied and we refuse
+         * exactly as Win32 does. Then MAP_FIXED can only replace the
+         * placeholder we now own. */
+        {
+            void *reserve = mmap(baseAddr, len, PROT_NONE,
+                                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            if (reserve == MAP_FAILED) {
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                return NULL;
+            }
+            if (reserve != baseAddr) {
+                munmap(reserve, len);
+                SetLastError(ERROR_INVALID_ADDRESS);
+                return NULL;
+            }
+            placeholder = 1;
+        }
+        flags |= MAP_FIXED;
+#endif
+    }
+
+    void *p = mmap(baseAddr, len, prot, flags, o->fd, off);

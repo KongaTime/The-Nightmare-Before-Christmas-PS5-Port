@@ -1,0 +1,7 @@
+#  define OHCI_TRAP_POSIX_A64 1
+#else
+/* PS5 port: x86-64 POSIX. platform/ps5_mmio.c decodes the faulting
+ * instruction (from a copy of the code: the console's text is execute-only)
+ * and calls back through xbox_OhciPs5Device/Read/Write below. */
+#  define OHCI_TRAP_PS5 1
+#endif

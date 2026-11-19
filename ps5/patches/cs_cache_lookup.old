@@ -1,0 +1,7 @@
+    uintptr_t key = (uintptr_t)guest;
+    CRITICAL_SECTION* found = NULL;
+    size_t home, i;
+
+    if (!key)
+        return NULL;
+    home = (size_t)((key >> 4) % XBOX_CS_TABLE_SIZE);

@@ -1,0 +1,46 @@
+/* Pack one attribute column while its format, size and source are fixed.
+ * The destination still uses the shader's interleaved float4 input layout. */
+static inline __attribute__((always_inline))
+void pack_attr_type(uint32_t type, const VertexAttr *a, uint32_t attr,
+                    const uint32_t *indices, uint32_t count, uint32_t width, float *out)
+{
+    const int inlined = s_gpu.inline_active;
+    const uint8_t *src = inlined ? (const uint8_t *)s_gpu.inline_buf
+                               : (const uint8_t *)xbox_GetMemoryOffset();
+    const uint64_t inline_bytes = (uint64_t)s_gpu.inline_count * 4;
+    const uint32_t elem = attr_elem_bytes(a);
+    const uint32_t size = a->size < 4 ? a->size : 4;
+    const float *fallback = s_gpu.imm_attr[attr];
+
+    for (uint32_t i = 0; i < count; ++i, out += width) {
+        const uint64_t offset = (uint64_t)a->offset + (uint64_t)indices[i] * a->stride;
+        int valid = inlined ? offset + elem <= inline_bytes
+                            : guest_span_ok(offset, elem);
+        if (valid) {
+            out[0] = out[1] = out[2] = 0.0f;
+            out[3] = 1.0f;
+            decode_attr(type, size, src + offset, out);
+        } else {
+            memcpy(out, fallback, 4 * sizeof(float));
+        }
+    }
+}
+
+static void pack_gpu_attr(uint32_t attr, const uint32_t *indices, uint32_t count, uint32_t width, float *out)
+{
+    const VertexAttr *a = &s_gpu.attr[attr];
+    if (a->size && a->stride && (a->offset || s_gpu.inline_active)) {
+        switch (a->type) {
+        case 0: pack_attr_type(0, a, attr, indices, count, width, out); return;
+        case 1: pack_attr_type(1, a, attr, indices, count, width, out); return;
+        case 2: pack_attr_type(2, a, attr, indices, count, width, out); return;
+        case 4: pack_attr_type(4, a, attr, indices, count, width, out); return;
+        case 5: pack_attr_type(5, a, attr, indices, count, width, out); return;
+        case 6: pack_attr_type(6, a, attr, indices, count, width, out); return;
+        }
+    }
+    for (uint32_t i = 0; i < count; ++i, out += width)
+        memcpy(out, s_gpu.imm_attr[attr], 4 * sizeof(float));
+}
+
+static int oogie_gpu_vsh_batch(void)

@@ -1,0 +1,1 @@
+        g_span_size = g_memory_size * (size_t)(1 + XBOX_NUM_MIRRORS);

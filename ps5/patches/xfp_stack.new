@@ -1,0 +1,1 @@
+        t = CreateThread(NULL, 256 * 1024, xfp_worker, (LPVOID)(intptr_t)k, 0, NULL);   /* PS5: small stack, see raster_stack */

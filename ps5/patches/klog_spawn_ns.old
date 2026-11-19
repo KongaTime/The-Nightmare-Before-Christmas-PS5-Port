@@ -1,0 +1,3 @@
+                    fprintf(stderr, "  [KERNEL] PsCreateSystemThreadEx: out of "
+                            "thread stacks, running worker 0x%08X inline\n",
+                            start_routine);

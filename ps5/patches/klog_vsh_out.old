@@ -1,0 +1,3 @@
+        if (field(ins, 3, 0, 1)) {
+            memcpy(out->pos, opos.v, sizeof out->pos);
+            memcpy(out->d0, outregs[3], sizeof out->d0);

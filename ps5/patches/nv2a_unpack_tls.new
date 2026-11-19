@@ -1,0 +1,24 @@
+/* Port: one thread-local object, not three. Every __thread access on this
+ * target is an emulated-TLS call, and unpack_cached() runs up to four
+ * times per vertex; three arrays made that nine calls per vertex for
+ * state only ever read together on the same thread. */
+typedef struct {
+    uint32_t key[16];
+    float    val[16][4];
+    int      valid[16];
+} NvRcUnpackCache;
+
+static NV_RC_TLS NvRcUnpackCache s_unpack_cache;
+
+static const float *unpack_cached(uint32_t c)
+{
+    NvRcUnpackCache *u = &s_unpack_cache;
+    unsigned slot = (c ^ (c >> 8) ^ (c >> 16) ^ (c >> 24)) & 15u;
+
+    if (!u->valid[slot] || u->key[slot] != c) {
+        nv2a_rc_unpack(c, u->val[slot]);
+        u->key[slot] = c;
+        u->valid[slot] = 1;
+    }
+    return u->val[slot];
+}

@@ -1,0 +1,45 @@
+    if (!nv2a_vsh_run((const float (*)[4])in, out))
+        return 0;
+    {
+        /* PS5 diagnostic: gameplay meshes come out degenerate or behind the
+         * eye (14M + 3.6M rejected). One vertex in 40000: what went in, what
+         * came out, and where D3D keeps its matrix (c96-c99 = D3D c0-c3). */
+        static volatile uint32_t vs_n;
+        static int vs_logs;
+        uint32_t n = __sync_fetch_and_add(&vs_n, 1);
+        {
+            /* A NaN position: run the vertex once more, traced. */
+            static volatile int traced;
+            if (out->pos[0] != out->pos[0] && traced < 2
+                    && __sync_fetch_and_add(&traced, 1) < 2) {
+                extern volatile int g_vsh_trace;
+                extern int sceKernelDebugOutText(int, const char *);
+                Nv2aVshOutput tmp;
+                char kb[260];
+                snprintf(kb, sizeof kb, "[VT] trace: in0=(%g,%g,%g,%g) in1=(%g,%g,%g,%g) in2=(%g,%g,%g,%g) in3=(%g,%g,%g,%g)\n",
+                         in[0][0], in[0][1], in[0][2], in[0][3], in[1][0], in[1][1], in[1][2], in[1][3],
+                         in[2][0], in[2][1], in[2][2], in[2][3], in[3][0], in[3][1], in[3][2], in[3][3]);
+                sceKernelDebugOutText(0, kb);
+                g_vsh_trace = 1;
+                nv2a_vsh_run((const float (*)[4])in, &tmp);
+                g_vsh_trace = 0;
+            }
+        }
+        if (n % 40000u == 39999u && vs_logs < 24) {
+            extern int sceKernelDebugOutText(int, const char *);
+            const float *c0 = nv2a_vsh_constant(96), *c1 = nv2a_vsh_constant(97);
+            const float *c2 = nv2a_vsh_constant(98), *c3 = nv2a_vsh_constant(99);
+            char kb[600];
+            vs_logs++;
+            snprintf(kb, sizeof kb,
+                     "[VSHS] n=%u a0 t%X s%u st%u in0=(%g,%g,%g,%g) in1=(%g,%g,%g,%g) in2=(%g,%g,%g,%g) "
+                     "out=(%g,%g,%g,%g) c96=(%g,%g,%g,%g) c97=(%g,%g,%g,%g) c98=(%g,%g,%g,%g) c99=(%g,%g,%g,%g)\n",
+                     n, s_gpu.attr[0].type, s_gpu.attr[0].size, s_gpu.attr[0].stride,
+                     in[0][0], in[0][1], in[0][2], in[0][3], in[1][0], in[1][1], in[1][2], in[1][3],
+                     in[2][0], in[2][1], in[2][2], in[2][3],
+                     out->pos[0], out->pos[1], out->pos[2], out->pos[3],
+                     c0[0], c0[1], c0[2], c0[3], c1[0], c1[1], c1[2], c1[3],
+                     c2[0], c2[1], c2[2], c2[3], c3[0], c3[1], c3[2], c3[3]);
+            sceKernelDebugOutText(0, kb);
+        }
+    }

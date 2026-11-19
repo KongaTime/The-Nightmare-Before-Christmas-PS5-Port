@@ -1,0 +1,3 @@
+    if (T.bpp != 4 && T.bpp != 2)
+        return;
+    if (a[3] <= 0.0f

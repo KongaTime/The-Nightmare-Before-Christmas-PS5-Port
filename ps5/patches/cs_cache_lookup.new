@@ -1,0 +1,19 @@
+    uintptr_t key = (uintptr_t)guest;
+    CRITICAL_SECTION* found = NULL;
+    size_t home, i;
+
+    if (!key)
+        return NULL;
+
+    /* The table below is correct but expensive, and the guest takes the same
+     * handful of locks over and over. Answer from the cache when the tag
+     * matches; everything else keeps the original path. */
+    if (g_cs_cache_on < 0)
+        g_cs_cache_on = oogie_flag("cs_fast", 1);
+    if (g_cs_cache_on) {
+        size_t index = (size_t)((key >> 4) & (XBOX_CS_CACHE - 1));
+        XBOX_CS_SLOT *slot = __atomic_load_n(&g_cs_cache[index], __ATOMIC_ACQUIRE);
+        if (slot && slot->key == key)
+            return &slot->cs;
+    }
+    home = (size_t)((key >> 4) % XBOX_CS_TABLE_SIZE);

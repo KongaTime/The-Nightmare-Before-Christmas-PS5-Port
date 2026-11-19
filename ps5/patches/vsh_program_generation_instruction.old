@@ -1,0 +1,2 @@
+    if (slot < NV2A_VSH_SLOTS)
+        memcpy(s_program[slot], words, sizeof s_program[slot]);

@@ -1,0 +1,1 @@
+        store_constant_word(s_const_load, s_const_word, word);

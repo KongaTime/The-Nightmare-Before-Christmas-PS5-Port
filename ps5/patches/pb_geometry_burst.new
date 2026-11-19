@@ -1,0 +1,43 @@
+/* Consecutive geometry parameters have no side effects beyond appending
+ * the payload and mirroring the last parameter of the method. */
+int oogie_pb_geometry_burst(uint32_t method, const uint32_t *src, uint32_t count)
+{
+    if (!s_gpu.prim || s_oring_on != 0 || s_ftrace == 2 || !count)
+        return 0;
+    uint32_t copy;
+    switch (method) {
+    case NV097_INLINE_ARRAY:
+        copy = NV_MAX_INLINE - s_gpu.inline_count;
+        if (copy > count)
+            copy = count;
+        memcpy(s_gpu.inline_buf + s_gpu.inline_count, src, copy * sizeof *src);
+        s_gpu.inline_count += copy;
+        break;
+    case 0x1808:                        /* ARRAY_ELEMENT32 */
+        copy = NV_MAX_INDICES - s_gpu.idx_count;
+        if (copy > count)
+            copy = count;
+        memcpy(s_gpu.idx + s_gpu.idx_count, src, copy * sizeof *src);
+        s_gpu.idx_count += copy;
+        break;
+    case NV097_ARRAY_ELEMENT16:
+        copy = (NV_MAX_INDICES - s_gpu.idx_count) / 2u;
+        if (copy > count)
+            copy = count;
+        for (uint32_t i = 0; i < copy; ++i) {
+            uint32_t packed = src[i];
+            s_gpu.idx[s_gpu.idx_count + i * 2u] = packed & 0xFFFFu;
+            s_gpu.idx[s_gpu.idx_count + i * 2u + 1u] = packed >> 16;
+        }
+        s_gpu.idx_count += copy * 2u;
+        break;
+    default:
+        return 0;
+    }
+    s_reg[method / 4u] = src[count - 1u];
+    return 1;
+}
+
+void nv2a_pb_exec_method(uint32_t subch, uint32_t method, uint32_t param)
+{
+    static int inited;

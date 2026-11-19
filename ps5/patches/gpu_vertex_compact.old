@@ -1,0 +1,28 @@
+static int oogie_gpu_vsh_batch(void)
+{
+    const uint32_t (*prog)[4];
+    uint32_t start, n = s_gpu.idx_count, i, k, ni = 0;
+    OogieVshBatch b;
+    Nv2aSurface surf;
+    Nv2aRenderState rs;
+    Nv2aTexture tex;
+    int st;
+
+    if (!s_gvsh_fn || !backend_draws() || !batch_uses_program())
+        return 0;
+    prog = oogie_vsh_program(&start);
+    const VshInputLayout *layout = vsh_input_layout(prog, start);
+    if (!layout)
+        return 0;
+    uint32_t ninsn = layout->ninsn, mask = layout->mask, nin = layout->count;
+    const uint32_t *slot = layout->slot;
+    if (!s_gvsh_in && !(s_gvsh_in = (float *)malloc((size_t)NV_MAX_INDICES
+                                                    * NV2A_VSH_INPUTS * 4 * sizeof(float))))
+        return 0;
+    if (!s_gvsh_idx && !(s_gvsh_idx = (uint32_t *)malloc((size_t)NV_MAX_INDICES * 3
+                                                         * sizeof(uint32_t))))
+        return 0;
+    for (k = 0; k < nin; ++k)
+        pack_gpu_attr(slot[k], n, nin * 4, s_gvsh_in + k * 4);
+#define GVSH_TRI(p, q, r) do { s_gvsh_idx[ni++] = (p); s_gvsh_idx[ni++] = (q); \
+                               s_gvsh_idx[ni++] = (r); } while (0)

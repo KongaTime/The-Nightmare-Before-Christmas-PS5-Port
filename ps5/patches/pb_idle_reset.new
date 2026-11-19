@@ -1,0 +1,2 @@
+            if (put != last_put || (now_ms - last_put_ms) > 2000) {
+                idle_ticks = 0;

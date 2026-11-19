@@ -1,0 +1,1 @@
+        WaitForSingleObject(s_pool.done, INFINITE);

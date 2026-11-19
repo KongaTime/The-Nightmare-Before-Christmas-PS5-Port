@@ -1,0 +1,13 @@
+static const float *unpack_cached(uint32_t c)
+{
+    static NV_RC_TLS uint32_t key[16];
+    static NV_RC_TLS float val[16][4];
+    static NV_RC_TLS int valid[16];
+    unsigned slot = (c ^ (c >> 8) ^ (c >> 16) ^ (c >> 24)) & 15u;
+    if (!valid[slot] || key[slot] != c) {
+        nv2a_rc_unpack(c, val[slot]);
+        key[slot] = c;
+        valid[slot] = 1;
+    }
+    return val[slot];
+}

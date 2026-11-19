@@ -1,0 +1,2 @@
+    g_xbox_kernel_caller = g_esp ? BRIDGE_MEM32(g_esp) : 0;
+    g_esp += 4;

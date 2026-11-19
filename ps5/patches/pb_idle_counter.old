@@ -1,0 +1,2 @@
+    volatile uint32_t *regs = (volatile uint32_t *)param;
+    while (!InterlockedCompareExchange(&g_nv2a_ack_stop, 0, 0)) {

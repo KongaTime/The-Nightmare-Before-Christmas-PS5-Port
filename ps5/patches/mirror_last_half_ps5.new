@@ -1,0 +1,10 @@
+            /* PS5: the console counts the title's own executable against
+             * the same budget as these views, and with RADV linked in (24 MB
+             * more eboot) the last view, the tiled aperture, did not fit at
+             * full size -- and the game writes to all 64 MB of it (a write at
+             * 0xF3000000 faulted with a 48 MB view). The third mirror, which
+             * only catches wrap-around reads, gives up its top half instead:
+             * guest 0x0C000000-0x0DFFFFFF stays mapped. */
+            g_mirror_views[m] = layout_map_view(g_mapping_handle,
+                                                m == 2 ? g_memory_size / 2 : g_memory_size,
+                                                (LPVOID)mirror_base);

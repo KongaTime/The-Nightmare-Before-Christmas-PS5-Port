@@ -1,0 +1,1 @@
+static SRWLOCK      g_cs_table_lock = SRWLOCK_INIT;

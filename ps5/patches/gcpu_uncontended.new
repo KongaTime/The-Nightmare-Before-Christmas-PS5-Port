@@ -1,0 +1,14 @@
+    if (!g_gcpu_busy && !g_gcpu_nw && !gcpu_stats_on()) {
+        /* With no older ticket this thread owns the CPU immediately. Keep
+         * the acquisition timestamp for a waiter that arrives later. */
+        g_gcpu_next++;
+        g_gcpu_busy = 1;
+        g_gcpu_holder_p = p;
+        g_gcpu_preempt = 0;
+        QueryPerformanceCounter(&g_gcpu_held_at);
+        ReleaseSRWLockExclusive(&g_gcpu_m);
+        return;
+    }
+    t = g_gcpu_next++;
+    if (g_gcpu_busy && p > g_gcpu_holder_p)
+        g_gcpu_preempt = 1;

@@ -1,0 +1,6 @@
+#else
+        flags |= MAP_FIXED;
+#endif
+    }
+
+    void *p = mmap(baseAddr, len, prot, flags, o->fd, off);

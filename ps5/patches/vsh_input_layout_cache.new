@@ -1,0 +1,58 @@
+typedef struct {
+    uint64_t generation;
+    uint32_t ninsn, mask, count;
+    uint32_t slot[NV2A_VSH_INPUTS];
+    int valid;
+} VshInputLayout;
+
+static const VshInputLayout *vsh_input_layout(const uint32_t (*program)[4], uint32_t start)
+{
+    extern uint64_t oogie_vsh_program_generation(void);
+    static VshInputLayout layouts[NV2A_VSH_SLOTS];
+
+    if (start >= NV2A_VSH_SLOTS)
+        return NULL;
+    VshInputLayout *layout = &layouts[start];
+    uint64_t generation = oogie_vsh_program_generation();
+    if (layout->valid && layout->generation == generation)
+        return layout->ninsn ? layout : NULL;
+
+    layout->generation = generation;
+    layout->valid = 1;
+    layout->ninsn = layout->mask = layout->count = 0;
+    for (uint32_t s = start; s < NV2A_VSH_SLOTS; ++s) {
+        const uint32_t *ins = program[s];
+        if (((ins[3] >> 12) & 15) && !((ins[3] >> 11) & 1))
+            return NULL;                    /* writes to c[] */
+        if (((ins[2] >> 26) & 3) == 2 || ((ins[2] >> 11) & 3) == 2 ||
+            ((ins[3] >> 28) & 3) == 2)
+            layout->mask |= 1u << ((ins[1] >> 9) & 15);
+        if (ins[3] & 1) {
+            layout->ninsn = s - start + 1;
+            for (uint32_t i = 0; i < NV2A_VSH_INPUTS; ++i)
+                if (layout->mask & (1u << i))
+                    layout->slot[layout->count++] = i;
+            return layout;
+        }
+    }
+    return NULL;                            /* no FINAL instruction */
+}
+
+static int oogie_gpu_vsh_batch(void)
+{
+    const uint32_t (*prog)[4];
+    uint32_t start, n = s_gpu.idx_count, i, k, ni = 0;
+    OogieVshBatch b;
+    Nv2aSurface surf;
+    Nv2aRenderState rs;
+    Nv2aTexture tex;
+    int st;
+
+    if (!s_gvsh_fn || !backend_draws() || !batch_uses_program())
+        return 0;
+    prog = oogie_vsh_program(&start);
+    const VshInputLayout *layout = vsh_input_layout(prog, start);
+    if (!layout)
+        return 0;
+    uint32_t ninsn = layout->ninsn, mask = layout->mask, nin = layout->count;
+    const uint32_t *slot = layout->slot;

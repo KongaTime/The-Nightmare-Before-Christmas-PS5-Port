@@ -1,0 +1,3 @@
+static void kernel_thunk_dispatch(void)
+{
+    GuestCpuThreadState *state = &t_guest_cpu;

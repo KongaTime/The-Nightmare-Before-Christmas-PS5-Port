@@ -1,0 +1,24 @@
+    /* PS5 port: the pixel size only matters to the CPU rasteriser. A
+     * registered back end draws into its own targets, so a surface the CPU
+     * path cannot write (2x anti-aliased: pitch / clip = 8 bytes; 8-bit)
+     * still has its triangles drawn -- this gate dropped every 3D mesh of
+     * Oogie's levels silently, leaving the HUD over a cleared screen. */
+    if (T.bpp != 4 && T.bpp != 2) {
+
+        {
+            static uint32_t badbpp, last;
+            badbpp++;
+            if (badbpp == 1 || (badbpp & 0xFFFF) == 0 || T.bpp != last) {
+                extern int sceKernelDebugOutText(int, const char *);
+                char kb[120];
+                last = T.bpp;
+                snprintf(kb, sizeof kb, "[XF] surface bpp %u (pitch %u clip %u): %u triangles%s\n",
+                         T.bpp, s_gpu.pitch, s_gpu.clip_w, badbpp,
+                         backend_draws() ? ", handed to the back end" : ", dropped");
+                sceKernelDebugOutText(0, kb);
+            }
+        }
+        if (!backend_draws())
+            return;
+    }
+    if (a[3] <= 0.0f

@@ -1,0 +1,14 @@
+static void append_draw_array(uint32_t param)
+{
+    uint32_t start = param & 0x00FFFFFFu;
+    uint32_t count = (param >> 24) + 1u;
+    uint32_t space = NV_MAX_INDICES - s_gpu.idx_count;
+    if (count > space)
+        count = space;
+    uint32_t *indices = s_gpu.idx + s_gpu.idx_count;
+    for (uint32_t i = 0; i < count; ++i)
+        indices[i] = start + i;
+    s_gpu.idx_count += count;
+}
+
+int oogie_pb_geometry_burst(uint32_t method, const uint32_t *src, uint32_t count)

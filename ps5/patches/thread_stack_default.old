@@ -1,0 +1,2 @@
+    if (stackSize)
+        pthread_attr_setstacksize(&attr, stackSize < 65536 ? 65536 : stackSize);

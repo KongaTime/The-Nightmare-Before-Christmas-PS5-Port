@@ -1,0 +1,65 @@
+        /* PS5 port: Xbox and Windows paths are case-insensitive, the
+         * console's /data is not. Oogie asks for d:\Movie\mv_00.bik and
+         * d:\Xact_data\... while the disc folders are movie/ and XACT_data/,
+         * so every load failed with PATH_NOT_FOUND and the textures stayed
+         * empty. The app sandbox refuses opendir (EPERM), so a missing path
+         * under the game directory is matched case-insensitively against the
+         * index tools/install.py writes of the dump (oogie_paths.txt). Only
+         * the game directory: saves are created by the title with the names
+         * it gives them. */
+        {
+            struct stat ci_st;
+            size_t base_len = strlen(base_dir);
+            if (base_dir == s_game_dir && strlen(host_path_buf) > base_len + 1
+                    && stat(host_path_buf, &ci_st) != 0) {
+                static char **ci_idx;
+                static int ci_n = -1;
+                static int ci_logs;
+                const char *rel = host_path_buf + base_len + 1;
+                int i, hit = -1;
+                if (ci_n < 0) {
+                    char index_path[MAX_PATH];
+                    snprintf(index_path, sizeof index_path, "%s/oogie_paths.txt", base_dir);
+                    FILE *f = fopen(index_path, "r");
+                    if (!f) f = fopen("/data/homebrew/PPSA90030/oogie_paths.txt", "r");
+                    if (!f) f = fopen("/app0/oogie_paths.txt", "r");
+                    ci_n = 0;
+                    if (f) {
+                        char ln[MAX_PATH];
+                        int cap = 0;
+                        while (fgets(ln, sizeof ln, f)) {
+                            size_t l = strlen(ln);
+                            while (l && (ln[l - 1] == '\n' || ln[l - 1] == '\r')) ln[--l] = 0;
+                            if (!l) continue;
+                            if (ci_n == cap) {
+                                char **g = (char **)realloc(ci_idx, (size_t)(cap ? cap * 2 : 1024) * sizeof *g);
+                                if (!g) break;
+                                ci_idx = g;
+                                cap = cap ? cap * 2 : 1024;
+                            }
+                            ci_idx[ci_n] = strdup(ln);
+                            if (ci_idx[ci_n]) ci_n++;
+                        }
+                        fclose(f);
+                    }
+                    {
+                        extern int sceKernelDebugOutText(int, const char *);
+                        char ci_b[96];
+                        snprintf(ci_b, sizeof ci_b, "PATH-CI index: %d entries", ci_n);
+                        sceKernelDebugOutText(0, ci_b);
+                    }
+                }
+                for (i = 0; i < ci_n; i++)
+                    if (strcasecmp(ci_idx[i], rel) == 0) { hit = i; break; }
+                if (hit >= 0)
+                    memcpy((char *)rel, ci_idx[hit], strlen(ci_idx[hit]));
+                if (ci_logs < 24) {
+                    extern int sceKernelDebugOutText(int, const char *);
+                    char ci_b[400];
+                    ci_logs++;
+                    snprintf(ci_b, sizeof ci_b, "PATH-CI %s %s", hit >= 0 ? "ok" : "MISS", host_path_buf);
+                    sceKernelDebugOutText(0, ci_b);
+                }
+            }
+        }
+        XBOX_TRACE(XBOX_LOG_PATH, "%s -> %s", xbox_path, host_path_buf);

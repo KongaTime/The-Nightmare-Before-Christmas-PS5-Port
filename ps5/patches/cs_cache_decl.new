@@ -1,0 +1,20 @@
+/* Direct-mapped cache in front of the shadow table.
+ *
+ * Every guest lock operation used to cost an SRW acquire/release and an
+ * open-addressed probe before it could even reach the lock itself. A title
+ * that sets D3D state once per draw does that millions of times a second, on
+ * the same few addresses, so cache the answer: one acquire-load that hits, no
+ * table, no lock, no diagnostic. Misses fall through to the table unchanged.
+ *
+ * Publish one slot pointer. The key is immutable in the shadow table, so
+ * readers always check the key of the exact slot they loaded. */
+#define XBOX_CS_CACHE 256
+static XBOX_CS_SLOT *g_cs_cache[XBOX_CS_CACHE];
+static int               g_cs_cache_on = -1;
+static int               g_cs_stats_on = -1;
+
+/* Platform switch store; see oogie_flags.h. Declared here rather than included
+ * so this file keeps upstream's include set. */
+extern int oogie_flag(const char *key, int def);
+
+static SRWLOCK      g_cs_table_lock = SRWLOCK_INIT;

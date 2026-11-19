@@ -1,0 +1,15 @@
+        uint64_t tiled_lo = XBOX_TILED_BASE;
+        uint64_t tiled_hi = tiled_lo + xbox_TiledApertureSize();
+
+        /* PS5: every mirror view costs the sandbox a full 64 MB of its shared
+         * file-map budget at map time (measured on console: the budget is
+         * exactly 6 views of 64 MB = 384 MB plus ~13 MB -- base + contig +
+         * 4 mirrors exhausted it, the tiled aperture below (another full
+         * 64 MB view of the contiguous object) was view #7 and failed
+         * ENOMEM in every build; mirrors beyond #3 never mapped anyway).
+         * 3 mirrors = 4*64MB = 256 MB of wrap coverage above the primary
+         * RAM (m0+m1+m2) -- the upstream RW walker figure exactly --
+         * and base + 3 mirrors + contig + tiled = 384 MB <= 397 MB. */
+        for (int m = 0; m < 3; m++) {
+            uintptr_t mirror_base = (uintptr_t)g_memory_base +
+                                    (uintptr_t)(m + 1) * g_memory_size;

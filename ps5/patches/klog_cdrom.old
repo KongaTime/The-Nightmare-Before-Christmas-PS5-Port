@@ -1,0 +1,3 @@
+    if (bridge_is_cdrom_device(name.Buffer)) {
+        fprintf(stderr, "  [FILE] %s -> synthetic DVD device handle\n",
+                name.Buffer);

@@ -1,0 +1,4 @@
+                    got > 2 ? p[2] : 0, got > 3 ? p[3] : 0);
+        fflush(stderr);
+    }
+    bridge_write_iostatus(iostatus, ios.Status, (uint32_t)ios.Information);

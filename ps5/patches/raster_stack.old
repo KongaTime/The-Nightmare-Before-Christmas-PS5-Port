@@ -1,0 +1,1 @@
+                CloseHandle(CreateThread(NULL, 0, raster_worker,

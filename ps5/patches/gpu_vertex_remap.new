@@ -1,0 +1,6 @@
+    if (!ni)
+        return 1;
+    if (vertex_count < n)
+        for (i = 0; i < ni; ++i)
+            s_gvsh_idx[i] = remap[s_gvsh_idx[i]];
+    b.program = prog + start;

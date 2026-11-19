@@ -1,0 +1,20 @@
+static void bridge_NtResumeThread(void)
+{
+    /* PS5 port: the placeholder PsCreateSystemThreadEx writes before a spawn
+     * (0xBEEF0001) is not a host object, and the POSIX ResumeThread reads
+     * through whatever it is given. A thread that ran inline or never
+     * started has nothing to resume: report "was not suspended". */
+    if (STACK_ARG(0) == 0xBEEF0001u || STACK_ARG(0) == 0xBEEF0010u
+            || STACK_ARG(0) == 0xDEAD0001u) {
+        static int _n;
+        if (_n++ < 8) {
+            char _b[120];
+            snprintf(_b, sizeof _b, "RESUME placeholder handle %08X from %08X: no-op",
+                     STACK_ARG(0), g_xbox_kernel_caller);
+            klog_line(_b);
+        }
+        if (STACK_ARG(1))
+            BRIDGE_MEM32(STACK_ARG(1)) = 0;
+        g_eax = 0;
+        return;
+    }

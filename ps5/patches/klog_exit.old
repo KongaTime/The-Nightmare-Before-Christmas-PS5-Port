@@ -1,0 +1,2 @@
+    fprintf(stderr, "  [KERNEL] HalReturnToFirmware: routine=%u - title is exiting\n",
+            routine);

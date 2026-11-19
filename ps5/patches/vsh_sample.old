@@ -1,0 +1,2 @@
+    if (!nv2a_vsh_run((const float (*)[4])in, out))
+        return 0;

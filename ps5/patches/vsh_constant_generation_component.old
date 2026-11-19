@@ -1,0 +1,1 @@
+        memcpy(&s_const[index][comp], &word, 4);

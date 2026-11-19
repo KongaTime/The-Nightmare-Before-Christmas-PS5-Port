@@ -1,0 +1,56 @@
+/* The same guest index fetches the same attributes within one draw.
+ * A collision may leave a duplicate, but every emitted index still refers
+ * to its own vertex data. Inline arrays already supply consecutive indices. */
+static uint32_t compact_gpu_indices(const uint32_t *indices, uint32_t count,
+                                    uint32_t *vertices, uint32_t *remap)
+{
+    uint32_t slots[128] = {0};
+    uint32_t unique = 0;
+    for (uint32_t i = 0; i < count; ++i) {
+        uint32_t index = indices[i];
+        uint32_t *slot = &slots[(index ^ (index >> 7)) & 127u];
+        if (!*slot || vertices[*slot - 1] != index) {
+            vertices[unique++] = index;
+            *slot = unique;
+        }
+        remap[i] = *slot - 1;
+    }
+    return unique;
+}
+
+static int oogie_gpu_vsh_batch(void)
+{
+    const uint32_t (*prog)[4];
+    uint32_t start, n = s_gpu.idx_count, i, k, ni = 0;
+    OogieVshBatch b;
+    Nv2aSurface surf;
+    Nv2aRenderState rs;
+    Nv2aTexture tex;
+    int st;
+
+    if (!s_gvsh_fn || !backend_draws() || !batch_uses_program())
+        return 0;
+    prog = oogie_vsh_program(&start);
+    const VshInputLayout *layout = vsh_input_layout(prog, start);
+    if (!layout)
+        return 0;
+    uint32_t ninsn = layout->ninsn, mask = layout->mask, nin = layout->count;
+    const uint32_t *slot = layout->slot;
+    if (!s_gvsh_in && !(s_gvsh_in = (float *)malloc((size_t)NV_MAX_INDICES
+                                                    * NV2A_VSH_INPUTS * 4 * sizeof(float))))
+        return 0;
+    if (!s_gvsh_idx && !(s_gvsh_idx = (uint32_t *)malloc((size_t)NV_MAX_INDICES * 3
+                                                         * sizeof(uint32_t))))
+        return 0;
+    static uint32_t vertices[NV_MAX_INDICES], remap[NV_MAX_INDICES];
+    const uint32_t *input_indices = s_gpu.idx;
+    uint32_t vertex_count = n;
+    if (!s_gpu.inline_active && n >= 8 && s_gpu.idx[n - 1] - s_gpu.idx[0] != n - 1) {
+        vertex_count = compact_gpu_indices(s_gpu.idx, n, vertices, remap);
+        if (vertex_count < n)
+            input_indices = vertices;
+    }
+    for (k = 0; k < nin; ++k)
+        pack_gpu_attr(slot[k], input_indices, vertex_count, nin * 4, s_gvsh_in + k * 4);
+#define GVSH_TRI(p, q, r) do { s_gvsh_idx[ni++] = (p); s_gvsh_idx[ni++] = (q); \
+                               s_gvsh_idx[ni++] = (r); } while (0)

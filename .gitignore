@@ -1,0 +1,38 @@
+# User's own disc files — never commit, never distribute
+game/
+*.xbe
+*.iso
+*.bik
+*.lz
+
+# Generated recomp output (regenerated from the user's disc)
+gen/
+build_out/
+port/src/recomp/gen/
+
+# Build outputs
+build/
+dist/
+*.elf
+*.prx
+*.pkg
+
+# Upstream clone is pinned separately; keep it out of this repo's history
+/upstream
+
+# Reference clones of the user's other ports
+
+/darkness-ps5
+/gtaiv-ps5
+
+# PS5 build output
+ps5/build/
+
+# Private art and local tooling
+ps5/title/assets/
+ps5/sce_sys/icon0.png
+ps5/sce_sys/pic0.dds
+ps5/sce_sys/pic1.dds
+__pycache__/
+.venv/
+ps5-release-build.log

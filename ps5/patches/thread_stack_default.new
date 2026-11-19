@@ -1,0 +1,20 @@
+    if (stackSize)
+        pthread_attr_setstacksize(&attr, stackSize < 65536 ? 65536 : stackSize);
+    else {
+        /* PS5 port: Windows gives a size-0 thread 1 MB, the size the PC
+         * build runs every one of these threads in. The console's default is
+         * larger, and with ~30 threads the title ran out of memory for its
+         * own workers (PsCreateSystemThreadEx -> ENOMEM). */
+        size_t def = 0;
+        static int logged;
+        pthread_attr_getstacksize(&attr, &def);
+        if (!logged) {
+            extern int sceKernelDebugOutText(int, const char *);
+            char b[96];
+            logged = 1;
+            snprintf(b, sizeof b, "[Oogie] default thread stack %zu bytes -> 1 MB", def);
+            sceKernelDebugOutText(0, b);
+        }
+        if (def == 0 || def > 1024 * 1024)
+            pthread_attr_setstacksize(&attr, 1024 * 1024);
+    }

@@ -1,0 +1,6 @@
+/* PS5 diagnostic: 0 not started, 1 waiting for work, 2 rasterising,
+ * 3 finished its rows. */
+static volatile int oogie_pool_phase[NV_RASTER_MAX_THREADS];
+
+static DWORD WINAPI raster_worker(LPVOID arg)
+{

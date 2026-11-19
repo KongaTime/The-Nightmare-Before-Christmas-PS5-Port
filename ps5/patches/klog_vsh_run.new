@@ -1,0 +1,19 @@
+int nv2a_vsh_run(const float in[NV2A_VSH_INPUTS][4], Nv2aVshOutput *out)
+{
+    /* PS5 diagnostic: per-vertex inputs the shader sees, plus the final
+     * position/diffuse it returns (logged for the first few vertices only --
+     * per-batch flooding would bury the klog). */
+    {
+        static int runs;
+        if (runs++ < 8) {
+            char kl[640];
+            int off = snprintf(kl, sizeof kl, "[VSH] v%u pos=%g %g %g %g", runs - 1,
+                               in[0][0], in[0][1], in[0][2], in[0][3]);
+            for (int a = 1; a < 4; a++)
+                off += snprintf(kl + off, sizeof kl - off, " v%u=%g %g %g %g",
+                                a, in[a][0], in[a][1], in[a][2], in[a][3]);
+            extern int sceKernelDebugOutText(int, const char *);
+            sceKernelDebugOutText(0, kl);
+        }
+    }
+    static int dump = -1;

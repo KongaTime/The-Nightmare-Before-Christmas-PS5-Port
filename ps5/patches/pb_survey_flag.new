@@ -1,0 +1,2 @@
+static int s_scan_enabled = -1;
+static int s_survey_enabled;

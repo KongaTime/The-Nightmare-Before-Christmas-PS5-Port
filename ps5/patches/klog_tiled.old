@@ -1,0 +1,5 @@
+        } else {
+            fprintf(stderr, "  WARNING: tiled aperture at 0x%08X failed"
+                    " (error %lu); rendering writes will fault\n",
+                    XBOX_TILED_BASE, GetLastError());
+        }

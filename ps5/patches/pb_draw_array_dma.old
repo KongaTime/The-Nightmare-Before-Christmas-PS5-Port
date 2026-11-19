@@ -1,0 +1,1 @@
+(s_pend_method == 0x1800 || s_pend_method == 0x1808 || s_pend_method == 0x1818)

@@ -1,0 +1,5 @@
+    if (oogie_gpu_vsh_batch())
+        return;
+
+    if (!s_xf && !(s_xf = (Nv2aVshOutput *)calloc(NV_MAX_INDICES, sizeof *s_xf)))
+        return;

@@ -1,0 +1,7 @@
+    switch (method) {
+    case NV097_DRAW_ARRAYS:
+        for (uint32_t i = 0; i < count && s_gpu.idx_count < NV_MAX_INDICES; ++i)
+            append_draw_array(src[i]);
+        break;
+    case NV097_INLINE_ARRAY:
+        copy = NV_MAX_INLINE - s_gpu.inline_count;

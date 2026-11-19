@@ -1,0 +1,2 @@
+static DWORD WINAPI raster_worker(LPVOID arg)
+{

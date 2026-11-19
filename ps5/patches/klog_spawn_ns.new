@@ -1,0 +1,4 @@
+                    fprintf(stderr, "  [KERNEL] PsCreateSystemThreadEx: out of "
+                            "thread stacks, running worker 0x%08X inline\n",
+                            start_routine);
+                    { char _b[120]; snprintf(_b, sizeof _b, "SPAWN routine %08X NO STACK: running inline", start_routine); klog_line(_b); }

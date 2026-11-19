@@ -1,0 +1,12 @@
+                    {
+                        extern int sceKernelDebugOutText(int, const char *);
+                        char _b[200];
+                        snprintf(_b, sizeof _b, "CS-WAIT waiter %lu lock 0x%08X holder %lu site 0x%08X depth %ld",
+                                 (unsigned long)GetCurrentThreadId(),
+                                 (uint32_t)((uintptr_t)CriticalSection - (uintptr_t)g_xbox_mem_offset),
+                                 slot ? slot->owner_tid : 0ul, slot ? slot->owner_site : 0u,
+                                 slot ? slot->depth : -1L);
+                        sceKernelDebugOutText(0, _b);
+                    }
+                    if (slot && slot->owner_tid)
+                        pc_stall_print_thread(slot->owner_tid, " (lock holder)");

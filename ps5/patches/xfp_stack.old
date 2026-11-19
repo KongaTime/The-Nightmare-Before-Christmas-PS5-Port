@@ -1,0 +1,1 @@
+        t = CreateThread(NULL, 0, xfp_worker, (LPVOID)(intptr_t)k, 0, NULL);

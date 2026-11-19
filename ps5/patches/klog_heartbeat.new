@@ -1,0 +1,3 @@
+    g_xbox_kernel_caller = g_esp ? BRIDGE_MEM32(g_esp) : 0;
+    g_esp += 4;
+    oogie_hb_note(ordinal, g_xbox_kernel_caller, g_esp ? BRIDGE_MEM32(g_esp) : 0);

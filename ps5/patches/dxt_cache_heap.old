@@ -1,0 +1,2 @@
+        static NV_TLS struct { uintptr_t key; uint32_t fmt; uint64_t raw[2];
+                        uint32_t px[16]; } cache[4096];

@@ -1,0 +1,3 @@
+    { char _b[96]; snprintf(_b, sizeof _b, "EXIT-HALRET routine=%u", (unsigned)routine); klog_line(_b); }
+    fprintf(stderr, "  [KERNEL] HalReturnToFirmware: routine=%u - title is exiting\n",
+            routine);

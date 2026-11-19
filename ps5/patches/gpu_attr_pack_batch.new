@@ -1,0 +1,2 @@
+    for (k = 0; k < nin; ++k)
+        pack_gpu_attr(slot[k], n, nin * 4, s_gvsh_in + k * 4);

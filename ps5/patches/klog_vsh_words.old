@@ -1,0 +1,4 @@
+        if (method >= 0x0B00 && method < 0x0B80) {    /* TRANSFORM_PROGRAM(i) */
+            nv2a_vsh_program_word(param);
+            break;
+        }

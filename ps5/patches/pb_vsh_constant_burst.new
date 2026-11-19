@@ -1,0 +1,17 @@
+int oogie_pb_constant_burst(uint32_t method, uint32_t stride, const uint32_t *src, uint32_t count)
+{
+    extern int oogie_vsh_constant_burst(const uint32_t *, uint32_t);
+    if (s_oring_on != 0 || s_ftrace == 2 || !count ||
+        method < 0x0B80 || method >= 0x0C00 ||
+        method + (count - 1) * stride >= 0x0C00 ||
+        !oogie_vsh_constant_burst(src, count))
+        return 0;
+    if (!stride)
+        s_reg[method / 4u] = src[count - 1];
+    else
+        memcpy(s_reg + method / 4u, src, count * sizeof *src);
+    return 1;
+}
+
+int oogie_pb_geometry_burst(uint32_t method, const uint32_t *src, uint32_t count)
+{

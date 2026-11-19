@@ -1,0 +1,6 @@
+        uint64_t tiled_lo = XBOX_TILED_BASE;
+        uint64_t tiled_hi = tiled_lo + xbox_TiledApertureSize();
+
+        for (int m = 0; m < XBOX_NUM_MIRRORS; m++) {
+            uintptr_t mirror_base = (uintptr_t)g_memory_base +
+                                    (uintptr_t)(m + 1) * g_memory_size;

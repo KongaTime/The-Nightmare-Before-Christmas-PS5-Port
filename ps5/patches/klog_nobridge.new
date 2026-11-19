@@ -1,0 +1,3 @@
+            fprintf(stderr, "  [KERNEL] WARNING: no bridge for ordinal %u (slot %d), returning 0\n",
+                    ordinal, slot);
+            { char _b[96]; snprintf(_b, sizeof _b, "NO-BRIDGE ordinal %u slot %d caller %08X", ordinal, slot, g_xbox_kernel_caller); klog_line(_b); }

@@ -1,0 +1,12 @@
+#include <string.h>
+#include <ctype.h>
+#include <wctype.h>
+
+/* PS5 port: the runtime's fprintf(stderr) never reaches the console's log,
+ * and the kernel log is the only channel the title has after a wedge. Mirror
+ * the events that decide whether the title boots or bails to it. */
+extern int sceKernelDebugOutText(int channel, const char *text);
+static void klog_line(const char *s)
+{
+    sceKernelDebugOutText(0, s);
+}

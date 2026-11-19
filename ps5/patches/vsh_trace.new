@@ -1,0 +1,14 @@
+        if (g_vsh_trace) {
+            /* PS5 diagnostic: one instruction of a traced vertex. */
+            extern int sceKernelDebugOutText(int, const char *);
+            char tb[420];
+            snprintf(tb, sizeof tb,
+                     "[VT] s%u mac%u ilu%u mm%X im%X t%u om%X oa%u%s a=(%g,%g,%g,%g) b=(%g,%g,%g,%g) c=(%g,%g,%g,%g) m=(%g,%g,%g,%g) i=(%g,%g,%g,%g) a0=%d\n",
+                     s, mac, ilu, mac_mask, ilu_mask, tdst, omask, oaddr,
+                     field(ins, 3, 11, 1) ? "" : "c",
+                     a.v[0], a.v[1], a.v[2], a.v[3], b.v[0], b.v[1], b.v[2], b.v[3],
+                     c.v[0], c.v[1], c.v[2], c.v[3], mres.v[0], mres.v[1], mres.v[2], mres.v[3],
+                     ires.v[0], ires.v[1], ires.v[2], ires.v[3], a0);
+            sceKernelDebugOutText(0, tb);
+        }
+        if (field(ins, 3, 0, 1)) {

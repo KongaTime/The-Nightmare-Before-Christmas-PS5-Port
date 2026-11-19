@@ -1,0 +1,8 @@
+#define NV_RASTER_MT_MIN_PIXELS 8192
+
+/* PS5 port: the pool was Win32-only, so every POSIX build rasterised on the
+ * executor thread alone -- the profiler had one thread 97% busy in
+ * nv2a_rc_eval and the intro movie at ~4 fps. Its events, threads and
+ * interlocked ops all come from the POSIX compat layer, and the pixel path
+ * is per-row independent (the texel cache is thread-local). */
+#if defined(_WIN32) || 1

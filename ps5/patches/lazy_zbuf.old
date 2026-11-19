@@ -1,0 +1,41 @@
+static struct { uint32_t offset; float *z; } s_zbufs[4];
+static int s_ftrace;            /* frame trace: 0 idle, 2 tracing, 3 done */
+static int s_zbuf_next;
+
+static float zclear_value(void)
+{
+    /* Zeta format in SURFACE_FORMAT bits 4-7: 1 is Z16, 2 is Z24S8. */
+    uint32_t zf = (s_gpu.format >> 4) & 0xF;
+    return zf == 1 ? (float)(s_gpu.zstencil_clear & 0xFFFF)
+                   : (float)(s_gpu.zstencil_clear >> 8);
+}
+
+static float *zbuf_current(int create)
+{
+    int i;
+    size_t k;
+
+    for (i = 0; i < 4; i++)
+        if (s_zbufs[i].z && s_zbufs[i].offset == s_gpu.zeta_offset)
+            return s_zbufs[i].z;
+    if (!create)
+        return NULL;
+    i = s_zbuf_next++ & 3;
+    if (!s_zbufs[i].z)
+        s_zbufs[i].z = (float *)malloc(sizeof(float) * NV_ZBUF_W * NV_ZBUF_H);
+    if (!s_zbufs[i].z)
+        return NULL;
+    s_zbufs[i].offset = s_gpu.zeta_offset;
+    for (k = 0; k < (size_t)NV_ZBUF_W * NV_ZBUF_H; k++)
+        s_zbufs[i].z[k] = 3.4e38f;
+    return s_zbufs[i].z;
+}
+
+static void zbuf_clear(void)
+{
+    float *z = zbuf_current(1), v = zclear_value();
+    size_t k;
+    if (z)
+        for (k = 0; k < (size_t)NV_ZBUF_W * NV_ZBUF_H; k++)
+            z[k] = v;
+}

@@ -1,0 +1,6 @@
+static uint32_t s_program[NV2A_VSH_SLOTS][4];
+static uint64_t s_program_generation;
+uint64_t oogie_vsh_program_generation(void)
+{
+    return s_program_generation;
+}

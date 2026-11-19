@@ -1,0 +1,22 @@
+    T.va = va; T.vb = vb; T.vc = vc;
+    {
+        /* PS5 diagnostic: what the rasteriser actually sees (first few). */
+        static int rlog;
+        if (rlog++ < 6) {
+            char kl[320];
+            snprintf(kl, sizeof kl,
+                     "[RAST] use_rc=%d ctrl=0x%08X fog_en=%u fog_mod=0x%03X fog_col=0x%08X\n"
+                     " icw=%08X %08X aicw=%08X %08X ocw=%08X %08X aocw=%08X %08X fac=%08X %08X %08X %08X f0=%08X %08X f1=%08X %08X\n",
+                     T.use_rc, s_gpu.rc.control, s_gpu.fog_enable, s_gpu.fog_mode,
+                     s_gpu.fog_color,
+                     s_gpu.rc.color_icw[0], s_gpu.rc.color_icw[1],
+                     s_gpu.rc.alpha_icw[0], s_gpu.rc.alpha_icw[1],
+                     s_gpu.rc.color_ocw[0], s_gpu.rc.color_ocw[1],
+                     s_gpu.rc.alpha_ocw[0], s_gpu.rc.alpha_ocw[1],
+                     s_gpu.rc.factor0[0], s_gpu.rc.factor0[1],
+                     s_gpu.rc.factor1[0], s_gpu.rc.factor1[1],
+                     s_gpu.rc.final0, s_gpu.rc.final1);
+            extern int sceKernelDebugOutText(int, const char *);
+            sceKernelDebugOutText(0, kl);
+        }
+    }

@@ -1,0 +1,1 @@
+        Sleep(0);  /* yield; the waiter is spinning on another core */

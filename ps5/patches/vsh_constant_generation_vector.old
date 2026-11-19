@@ -1,0 +1,2 @@
+    if (index < NV2A_VSH_CONSTANTS)
+        memcpy(s_const[index], v, sizeof s_const[index]);

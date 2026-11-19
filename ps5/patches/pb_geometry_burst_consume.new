@@ -1,0 +1,19 @@
+static void pb_consume(const uint8_t *mem, uint32_t put, uint32_t *words)
+{
+    extern int oogie_pb_geometry_burst(uint32_t, const uint32_t *, uint32_t);
+    if (s_exec_enabled && !s_survey_enabled && s_pend_noninc && !s_pend_subch &&
+        s_pend_left >= 4 && s_get < put && s_get < PB_RAM_BYTES &&
+        (s_pend_method == 0x1800 || s_pend_method == 0x1808 || s_pend_method == 0x1818)) {
+        uint32_t end = put < PB_RAM_BYTES ? put : PB_RAM_BYTES;
+        uint32_t count = (end - s_get) / 4u;
+        if (count > s_pend_left)
+            count = s_pend_left;
+        if (oogie_pb_geometry_burst(s_pend_method,
+                                    (const uint32_t *)(mem + (0x80000000u | s_get)), count)) {
+            s_get = (s_get + count * 4u) & PB_PHYS_MASK;
+            s_pend_i += count;
+            s_pend_left -= count;
+            *words += count;
+            return;
+        }
+    }

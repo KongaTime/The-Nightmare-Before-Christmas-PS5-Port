@@ -1,0 +1,18 @@
+        if (field(ins, 3, 0, 1)) {
+            memcpy(out->pos, opos.v, sizeof out->pos);
+            memcpy(out->d0, outregs[3], sizeof out->d0);
+            {
+                /* PS5 diagnostic: log the position/diffuse the shader
+                 * actually produced (first few vertices only). */
+                static int outruns;
+                if (outruns++ < 8) {
+                    char kl[256];
+                    snprintf(kl, sizeof kl,
+                             "[VSH] out pos=%g %g %g %g d0=%g %g %g %g d1=%g %g %g %g\n",
+                             out->pos[0], out->pos[1], out->pos[2], out->pos[3],
+                             out->d0[0], out->d0[1], out->d0[2], out->d0[3],
+                             out->d1[0], out->d1[1], out->d1[2], out->d1[3]);
+                    extern int sceKernelDebugOutText(int, const char *);
+                    sceKernelDebugOutText(0, kl);
+                }
+            }

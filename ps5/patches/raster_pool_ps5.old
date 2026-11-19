@@ -1,0 +1,3 @@
+#define NV_RASTER_MT_MIN_PIXELS 8192
+
+#if defined(_WIN32)

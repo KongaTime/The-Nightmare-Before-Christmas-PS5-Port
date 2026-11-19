@@ -1,0 +1,23 @@
+#if defined(OHCI_TRAP_PS5)
+/* PS5 port: the device and register offset a trapped guest address names,
+ * or NULL; and the split accessors the decoder calls back with. */
+void *xbox_OhciPs5Device(uint32_t xbox_va, uint32_t *offset)
+{
+    OhciController *hc = hc_for(xbox_va);
+    if (!hc)
+        return NULL;
+    *offset = xbox_va - hc->base;
+    return hc;
+}
+uint64_t xbox_OhciPs5Read(void *dev, uint32_t off, int size)
+{
+    return ohci_read_split(dev, off, size);
+}
+void xbox_OhciPs5Write(void *dev, uint32_t off, uint64_t val, int size)
+{
+    ohci_write_split(dev, off, val, size);
+}
+#endif
+
+int xbox_OhciHandleMmio(void *ctx, uint32_t xbox_va)
+{

@@ -1,0 +1,4 @@
+        g_tiled_view = g_contig_mapping
+            ? layout_map_view(g_contig_mapping, tiled_size,
+                              (LPVOID)tiled_native)
+            : NULL;

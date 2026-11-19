@@ -1,0 +1,2 @@
+    if (s_load_slot < NV2A_VSH_SLOTS)
+        s_program[s_load_slot][s_load_word] = word;

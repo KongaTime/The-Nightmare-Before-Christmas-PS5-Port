@@ -1,0 +1,2 @@
+    unsigned idle_ticks = 0;
+    while (!InterlockedCompareExchange(&g_nv2a_ack_stop, 0, 0)) {

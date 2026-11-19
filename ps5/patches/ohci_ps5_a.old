@@ -1,0 +1,2 @@
+#  define OHCI_TRAP_POSIX_A64 1
+#endif

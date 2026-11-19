@@ -1,0 +1,4 @@
+                        if (put != last_put) {
+                            extern void oogie_ps5_timed_pb_scan(uint32_t);
+                            oogie_ps5_timed_pb_scan(put);
+                        }

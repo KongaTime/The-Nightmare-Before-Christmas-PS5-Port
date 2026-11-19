@@ -1,0 +1,19 @@
+static float    s_const[NV2A_VSH_CONSTANTS][4];
+/* The push-buffer executor is the owner of the constant bank. Track writes
+ * so draws can compare their snapshots without scanning all 192 registers. */
+static uint64_t s_const_generation;
+
+uint64_t oogie_vsh_constant_generation(void)
+{
+    return s_const_generation;
+}
+
+static void store_constant_word(uint32_t index, uint32_t component, uint32_t word)
+{
+    uint32_t previous;
+    memcpy(&previous, &s_const[index][component], sizeof previous);
+    if (previous != word) {
+        memcpy(&s_const[index][component], &word, sizeof word);
+        ++s_const_generation;
+    }
+}

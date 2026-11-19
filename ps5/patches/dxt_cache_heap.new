@@ -1,0 +1,21 @@
+        /* PS5 port: a 400 KB thread-local array is emulated TLS on the
+         * console, malloc'd per thread on first use -- and emutls abort()s
+         * when that malloc fails, which it did on the raster workers. Each
+         * thread maps its own table instead, and decodes uncached if even
+         * that fails. */
+        typedef struct { uintptr_t key; uint32_t fmt; uint64_t raw[2];
+                         uint32_t px[16]; } DxtCacheEnt;
+        static NV_TLS DxtCacheEnt *cache;
+        if (!cache) {
+            /* The direct-memory heap first (RADV's link recipe wraps malloc
+             * onto it); flexible memory, where mmap comes from, is scarce. */
+            void *m = calloc(4096, sizeof(DxtCacheEnt));
+            if (!m)
+                m = mmap(NULL, 4096 * sizeof(DxtCacheEnt), PROT_READ | PROT_WRITE,
+                         MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            if (!m || m == (void *)-1) {
+                d3d8_dxt_decode_texel(mem + base, fmt, u, v, t->width, argb);
+                return 1;
+            }
+            cache = (DxtCacheEnt *)m;
+        }

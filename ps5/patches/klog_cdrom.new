@@ -1,0 +1,4 @@
+    if (bridge_is_cdrom_device(name.Buffer)) {
+        { char _b[340]; snprintf(_b, sizeof _b, "FILE-DVD %s", name.Buffer); klog_line(_b); }
+        fprintf(stderr, "  [FILE] %s -> synthetic DVD device handle\n",
+                name.Buffer);

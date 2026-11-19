@@ -1,0 +1,4 @@
+    /* How many batches carry coordinates at all, and what range they span.
+     * A pipeline that decodes perfectly and draws nothing is indistinguishable
+     * from one that never ran, unless the vertices themselves are measured. */
+    {

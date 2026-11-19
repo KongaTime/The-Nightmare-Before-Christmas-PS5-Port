@@ -1,0 +1,3 @@
+    t = g_gcpu_next++;
+    if (g_gcpu_busy && p > g_gcpu_holder_p)
+        g_gcpu_preempt = 1;

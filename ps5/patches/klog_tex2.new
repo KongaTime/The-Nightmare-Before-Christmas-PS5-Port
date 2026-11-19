@@ -1,0 +1,33 @@
+static int sample_tex(const Texture *t, uint32_t face_offset,
+                      uint32_t u, uint32_t v, uint32_t *argb)
+{
+    const uint8_t *mem = (const uint8_t *)xbox_GetMemoryOffset();
+    const uint8_t *p;
+    uint32_t fmt, base = t->offset + face_offset;
+
+    if (!t->valid)
+        return 0;
+    {
+        static int tlog;
+        if (tlog++ < 8) {
+            uint32_t phys = base;
+            if (phys >= XBOX_CONTIG_BASE
+                && (uint64_t)phys < (uint64_t)XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE)
+                phys -= XBOX_CONTIG_BASE;
+            char kl[420];
+            snprintf(kl, sizeof kl,
+                     "[TEX] off=0x%08X phys=0x%08X face=0x%X fmt=0x%02X %ux%u pitch=%u addr=%u/%u u=%u v=%u va=%08X %08X %08X %08X phys=%08X %08X %08X %08X\n",
+                     t->offset, phys, face_offset, t->color, t->width, t->height,
+                     t->pitch, t->addr_u, t->addr_v, u, v,
+                     *(const uint32_t *)(mem + base),
+                     *(const uint32_t *)(mem + base + 4),
+                     *(const uint32_t *)(mem + base + 8),
+                     *(const uint32_t *)(mem + base + 12),
+                     *(const uint32_t *)(mem + phys),
+                     *(const uint32_t *)(mem + phys + 4),
+                     *(const uint32_t *)(mem + phys + 8),
+                     *(const uint32_t *)(mem + phys + 12));
+            extern int sceKernelDebugOutText(int, const char *);
+            sceKernelDebugOutText(0, kl);
+        }
+    }

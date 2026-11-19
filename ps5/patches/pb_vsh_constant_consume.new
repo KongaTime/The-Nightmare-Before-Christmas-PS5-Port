@@ -1,0 +1,23 @@
+    extern int oogie_pb_geometry_burst(uint32_t, const uint32_t *, uint32_t);
+    extern int oogie_pb_constant_burst(uint32_t, uint32_t, const uint32_t *, uint32_t);
+    uint32_t stride = s_pend_noninc ? 0 : 4;
+    uint32_t method = s_pend_method + s_pend_i * stride;
+    if (s_exec_enabled && !s_survey_enabled && !s_pend_subch &&
+        s_pend_left >= 4 && s_get < put && s_get < PB_RAM_BYTES &&
+        method >= 0x0B80 && method < 0x0C00) {
+        uint32_t end = put < PB_RAM_BYTES ? put : PB_RAM_BYTES;
+        uint32_t count = (end - s_get) / 4u;
+        if (count > s_pend_left)
+            count = s_pend_left;
+        if (stride && count > (0x0C00u - method) / 4u)
+            count = (0x0C00u - method) / 4u;
+        if (oogie_pb_constant_burst(method, stride,
+                                   (const uint32_t *)(mem + (0x80000000u | s_get)), count)) {
+            s_get = (s_get + count * 4u) & PB_PHYS_MASK;
+            s_pend_i += count;
+            s_pend_left -= count;
+            *words += count;
+            /* Any remaining parameters can name other methods. */
+        }
+    }
+    if (s_exec_enabled && !s_survey_enabled && s_pend_noninc && !s_pend_subch &&

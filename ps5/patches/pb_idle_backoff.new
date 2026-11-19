@@ -1,0 +1,7 @@
+        /* Give short gaps between submissions time to resolve by polling.
+         * The PS5 helper can back off once PUT has remained unchanged. */
+        extern int oogie_ps5_pb_idle(unsigned);
+        if (idle_ticks < 16)
+            ++idle_ticks;
+        if (!oogie_ps5_pb_idle(idle_ticks))
+            Sleep(0);

@@ -1,0 +1,1 @@
+RECOMP_TLS uint32_t g_seh_ebp = 0;

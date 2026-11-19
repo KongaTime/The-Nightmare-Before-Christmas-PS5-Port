@@ -1,0 +1,9 @@
+static int sample_tex(const Texture *t, uint32_t face_offset,
+                      uint32_t u, uint32_t v, uint32_t *argb)
+{
+    const uint8_t *mem = (const uint8_t *)xbox_GetMemoryOffset();
+    const uint8_t *p;
+    uint32_t fmt, base = t->offset + face_offset;
+
+    if (!t->valid)
+        return 0;

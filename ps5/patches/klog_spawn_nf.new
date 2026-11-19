@@ -1,0 +1,3 @@
+            fprintf(stderr, "  [KERNEL] PsCreateSystemThreadEx: start routine 0x%08X not found in dispatch!\n",
+                    start_routine);
+            { char _b[120]; snprintf(_b, sizeof _b, "SPAWN routine %08X NOT IN DISPATCH", start_routine); klog_line(_b); }

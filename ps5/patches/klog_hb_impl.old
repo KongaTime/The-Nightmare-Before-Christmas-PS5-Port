@@ -1,0 +1,4 @@
+static void klog_line(const char *s)
+{
+    sceKernelDebugOutText(0, s);
+}

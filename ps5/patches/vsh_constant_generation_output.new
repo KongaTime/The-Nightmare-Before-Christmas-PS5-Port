@@ -1,0 +1,4 @@
+                if (s_cxt_write && oaddr < NV2A_VSH_CONSTANTS) {
+                    write_masked(s_const[oaddr], src, omask);
+                    ++s_const_generation;
+                }

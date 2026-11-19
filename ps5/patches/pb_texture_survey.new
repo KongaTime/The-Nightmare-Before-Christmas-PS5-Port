@@ -1,0 +1,9 @@
+    static int enabled = -1;
+    int i;
+
+    if (enabled < 0)
+        enabled = getenv("RECOMP_TEX_DUMP") != NULL ||
+                  getenv("RECOMP_PB_EXEC_VERBOSE") != NULL;
+    if (!enabled || !s_gpu.texs[0].valid)
+        return;
+    for (i = 0; i < s_tex_use_count; i++) {

@@ -1,0 +1,3 @@
+__declspec(dllimport) unsigned long __stdcall GetCurrentThreadId(void);
+static unsigned oogie_tid(void) { return (unsigned)GetCurrentThreadId(); }
+static volatile unsigned oogie_fecv_tid;

@@ -1,0 +1,1 @@
+                CloseHandle(CreateThread(NULL, 256 * 1024, raster_worker,   /* PS5: the default stack ran the title out of memory for its own threads */

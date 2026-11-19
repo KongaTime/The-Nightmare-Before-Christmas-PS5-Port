@@ -1,0 +1,9 @@
+        } else {
+            { extern int sceKernelDebugOutText(int, const char *); char _b[200];
+              snprintf(_b, sizeof _b, "TILEDFAIL guest=0x%08X error=%lu size=0x%zX",
+                       (unsigned)XBOX_TILED_BASE, GetLastError(), (size_t)tiled_size);
+              sceKernelDebugOutText(0, _b); }
+            fprintf(stderr, "  WARNING: tiled aperture at 0x%08X failed"
+                    " (error %lu); rendering writes will fault\n",
+                    XBOX_TILED_BASE, GetLastError());
+        }

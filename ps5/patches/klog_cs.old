@@ -1,0 +1,2 @@
+                    if (slot && slot->owner_tid)
+                        pc_stall_print_thread(slot->owner_tid, " (lock holder)");

@@ -1,0 +1,55 @@
+static uint64_t s_fast_d3d_cs_calls, s_direct_d3d_cs_calls;
+uint64_t oogie_ps5_d3d_cs_fast_count(void)
+{
+    return __atomic_load_n(&s_fast_d3d_cs_calls, __ATOMIC_RELAXED) +
+           __atomic_load_n(&s_direct_d3d_cs_calls, __ATOMIC_RELAXED);
+}
+
+static int try_fast_d3d_cs(GuestCpuThreadState *state, int slot, OogieGuestRegisters *regs)
+{
+    extern int oogie_ps5_d3d_cs_fast_enabled(void);
+    extern int oogie_ps5_try_d3d_cs(void *, uint32_t, DWORD);
+    if (!state->held || state->dispatch_depth || g_gcpu_preempt ||
+        (unsigned)slot > 1u || !oogie_ps5_d3d_cs_fast_enabled())
+        return 0;
+    unsigned ordinal = g_slot_ordinals[slot];
+    if ((ordinal != 277 && ordinal != 294) || g_slot_arg_bytes[slot] != 4)
+        return 0;
+    uint32_t section = BRIDGE_MEM32(regs->reg_esp + 4);
+    if (!section || section != BRIDGE_MEM32(0x40B0E0u))
+        return 0;
+    if (ordinal == 277) {
+        uint32_t caller = BRIDGE_MEM32(regs->reg_esp);
+        if (!oogie_ps5_try_d3d_cs(XBOX_TO_NATIVE(section), caller, state->host_tid))
+            return 0;
+    } else {
+        xbox_RtlLeaveCriticalSection(XBOX_TO_NATIVE(section));
+    }
+    regs->reg_eax = 0;
+    regs->reg_esp += 8;
+    return 1;
+}
+
+
+uint64_t oogie_ps5_d3d_cs_direct_count(void)
+{
+    return __atomic_load_n(&s_direct_d3d_cs_calls, __ATOMIC_RELAXED);
+}
+
+int oogie_ps5_d3d_cs_direct(uint32_t target, OogieGuestRegisters *regs)
+{
+    if (target != KERNEL_VA_BASE && target != KERNEL_VA_BASE + 4)
+        return 0;
+    if (!try_fast_d3d_cs(&t_guest_cpu, (target - KERNEL_VA_BASE) / 4, regs))
+        return 0;
+    __atomic_fetch_add(&s_direct_d3d_cs_calls, 1, __ATOMIC_RELAXED);
+    return 1;
+}
+
+static void kernel_thunk_dispatch(void)
+{
+    GuestCpuThreadState *state = &t_guest_cpu;
+    if (try_fast_d3d_cs(state, g_kernel_dispatch_slot, &oogie_guest_regs)) {
+        __atomic_fetch_add(&s_fast_d3d_cs_calls, 1, __ATOMIC_RELAXED);
+        return;
+    }

@@ -1,0 +1,30 @@
+static int oogie_gpu_vsh_batch(void)
+{
+    const uint32_t (*prog)[4];
+    uint32_t start, s, ninsn = 0, mask = 0, nin = 0, n = s_gpu.idx_count, i, k, ni = 0;
+    uint32_t slot[NV2A_VSH_INPUTS];
+    OogieVshBatch b;
+    Nv2aSurface surf;
+    Nv2aRenderState rs;
+    Nv2aTexture tex;
+    int st;
+
+    if (!s_gvsh_fn || !backend_draws() || !batch_uses_program())
+        return 0;
+    prog = oogie_vsh_program(&start);
+    for (s = start; s < NV2A_VSH_SLOTS; s++) {
+        const uint32_t *ins = prog[s];
+        if (((ins[2] >> 26) & 3) == 2 || ((ins[2] >> 11) & 3) == 2
+                || ((ins[3] >> 28) & 3) == 2)
+            mask |= 1u << ((ins[1] >> 9) & 15);         /* reads an input */
+        if (((ins[3] >> 12) & 15) && !((ins[3] >> 11) & 1))
+            return 0;                                   /* writes c[] */
+        ninsn++;
+        if (ins[3] & 1)
+            break;
+    }
+    if (s == NV2A_VSH_SLOTS)
+        return 0;                                       /* no program */
+    for (i = 0; i < NV2A_VSH_INPUTS; i++)
+        if (mask & (1u << i))
+            slot[nin++] = i;

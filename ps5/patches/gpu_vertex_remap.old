@@ -1,0 +1,3 @@
+    if (!ni)
+        return 1;
+    b.program = prog + start;

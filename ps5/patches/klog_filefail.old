@@ -1,0 +1,6 @@
+            if (!xbox_missing_is_reported(gpath))
+                fprintf(stderr, "  [FILE] %s (disp %u) -> 0x%08X FAILED (win32 err=%u%s)\n",
+                        gpath, (unsigned)disposition, status, _e,
+                        _e == 32u ? " ERROR_SHARING_VIOLATION"
+                      : _e ==  2u ? " ERROR_FILE_NOT_FOUND"
+                      : _e ==  3u ? " ERROR_PATH_NOT_FOUND" : "");

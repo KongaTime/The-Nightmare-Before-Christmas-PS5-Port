@@ -1,0 +1,5 @@
+    g_eax = (uint32_t)xbox_KeWaitForSingleObject(
+        h, wait_reason, wait_mode,
+        (BOOLEAN)alertable, XBOX_TO_NATIVE(timeout_ptr));
+    { char _b[160]; snprintf(_b, sizeof _b, "WAIT-DONE object=0x%08X handle=0x%08X result=0x%08X", (unsigned)object, (unsigned)(uintptr_t)h, (unsigned)g_eax); klog_line(_b); }
+}

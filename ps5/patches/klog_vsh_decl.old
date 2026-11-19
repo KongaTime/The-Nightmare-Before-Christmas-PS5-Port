@@ -1,0 +1,1 @@
+extern int nv2a_pb_dma_walk(void);   /* nv2a_pb_scan.c: RECOMP_PB_WALK=dma */

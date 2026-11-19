@@ -1,0 +1,2 @@
+        if (g_cs_stats_on)
+            InterlockedIncrement(&g_cs_leaves);

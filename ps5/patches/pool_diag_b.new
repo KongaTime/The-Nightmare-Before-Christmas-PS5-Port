@@ -1,0 +1,14 @@
+        /* PS5 diagnostic: a pool that never reports done stalls the frame;
+         * say which workers are where. */
+        while (WaitForSingleObject(s_pool.done, 3000) == WAIT_TIMEOUT) {
+            static int dl;
+            if (dl++ < 8) {
+                extern int sceKernelDebugOutText(int, const char *);
+                char b[400];
+                int o = snprintf(b, sizeof b, "[POOL] stuck: n=%d pending=%ld rows %d..%d phases:",
+                                 s_pool.n, (long)s_pool.pending, T->miny, T->maxy), q;
+                for (q = 0; q < s_pool.n - 1 && o < (int)sizeof b - 8; q++)
+                    o += snprintf(b + o, sizeof b - o, " %d", oogie_pool_phase[q]);
+                sceKernelDebugOutText(0, b);
+            }
+        }

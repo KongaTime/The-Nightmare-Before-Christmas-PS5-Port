@@ -1,0 +1,23 @@
+static void gcpu_leave(void)
+{
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    AcquireSRWLockExclusive(&g_gcpu_m);
+    {
+        /* time held, by host thread (a small open-addressed table) */
+        DWORD id = GetCurrentThreadId();
+        int k = (int)(id % GCPU_HOLD_N), n;
+        if (!g_gcpu_qpf.QuadPart) QueryPerformanceFrequency(&g_gcpu_qpf);
+        for (n = 0; n < GCPU_HOLD_N; n++, k = (k + 1) % GCPU_HOLD_N)
+            if (g_gcpu_hold_id[k] == id || !g_gcpu_hold_id[k]) {
+                g_gcpu_hold_id[k] = id;
+                g_gcpu_hold_p[k] = g_gcpu_holder_p;
+                g_gcpu_hold_ms[k] += (double)(now.QuadPart - g_gcpu_held_at.QuadPart) * 1000.0
+                                     / (double)g_gcpu_qpf.QuadPart;
+                break;
+            }
+    }
+    g_gcpu_busy = 0;
+    ReleaseSRWLockExclusive(&g_gcpu_m);
+    WakeAllConditionVariable(&g_gcpu_cv);
+}

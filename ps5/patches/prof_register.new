@@ -1,0 +1,5 @@
+static void *thread_trampoline(void *arg)
+{
+    w32_object *o = (w32_object *)arg;
+    /* PS5 port: every runtime thread is sampled by platform/ps5_prof.c. */
+    { extern void oogie_prof_register(void); oogie_prof_register(); }

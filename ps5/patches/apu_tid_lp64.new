@@ -1,0 +1,6 @@
+/* PS5 (LP64): upstream asks for the host thread id through a dllimport'd
+ * Win32 call, which clashes with the runtime's own DWORD GetCurrentThreadId
+ * once `unsigned long` is 64-bit. Ask the host the same question directly. */
+#include <pthread.h>
+static unsigned oogie_tid(void) { return (unsigned)(unsigned long)pthread_self(); }
+static volatile unsigned oogie_fecv_tid;

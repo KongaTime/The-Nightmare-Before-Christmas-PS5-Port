@@ -1,0 +1,2 @@
+        oogie_pool_phase[k] = 3;
+        if (InterlockedDecrement(&s_pool.pending) == 0)

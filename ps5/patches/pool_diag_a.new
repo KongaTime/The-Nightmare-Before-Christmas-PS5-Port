@@ -1,0 +1,3 @@
+        oogie_pool_phase[k] = 1;
+        WaitForSingleObject(s_pool.start[k], INFINITE);
+        oogie_pool_phase[k] = 2;

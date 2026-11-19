@@ -1,0 +1,7 @@
+    for (i = 0; i < n; i++) {
+        float *d = s_gvsh_in + (size_t)i * nin * 4;
+        for (k = 0; k < nin; k++)
+            if (!fetch_attr(&s_gpu.attr[slot[k]], s_gpu.idx[i], d + k * 4)
+                    && slot[k] < NV_VERTEX_ATTRS)
+                memcpy(d + k * 4, s_gpu.imm_attr[slot[k]], 4 * sizeof(float));
+    }

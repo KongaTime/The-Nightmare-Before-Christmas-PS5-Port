@@ -1,0 +1,30 @@
+        g_tiled_view = g_contig_mapping
+            ? layout_map_view(g_contig_mapping, tiled_size,
+                              (LPVOID)tiled_native)
+            : NULL;
+        /* PS5: the console counts the title's own executable against the
+         * same budget as these views, and with RADV linked in (24 MB more of
+         * eboot) the full 64 MB tiled view no longer fits. Oogie's render
+         * surfaces sit low in the contiguous window (framebuffers 1-4 MB in,
+         * its first tiled access 7 MB in), so a smaller view still covers
+         * them: take the largest that fits. */
+        {
+            static const size_t try_sizes[] = { 48u << 20, 32u << 20, 16u << 20 };
+            size_t i;
+            for (i = 0; !g_tiled_view && g_contig_mapping
+                        && i < sizeof try_sizes / sizeof try_sizes[0]; i++) {
+                if (try_sizes[i] >= tiled_size)
+                    continue;
+                tiled_size = try_sizes[i];
+                g_tiled_view = layout_map_view(g_contig_mapping, tiled_size,
+                                               (LPVOID)tiled_native);
+            }
+            {
+                extern int sceKernelDebugOutText(int, const char *);
+                char b[120];
+                snprintf(b, sizeof b, "tiled aperture view: %s, %u MB",
+                         g_tiled_view ? "mapped" : "FAILED",
+                         (unsigned)(tiled_size >> 20));
+                sceKernelDebugOutText(0, b);
+            }
+        }

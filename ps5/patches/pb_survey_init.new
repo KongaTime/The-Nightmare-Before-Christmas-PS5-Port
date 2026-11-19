@@ -1,0 +1,5 @@
+    if (s_scan_enabled < 0) {
+        const char *survey = getenv("OOGIE_PB_SURVEY");
+        s_scan_enabled = getenv("RECOMP_PB_SCAN") != NULL;
+        s_survey_enabled = s_scan_enabled || (survey && *survey && *survey != '0');
+    }

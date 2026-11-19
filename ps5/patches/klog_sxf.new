@@ -1,0 +1,36 @@
+    if (oogie_gpu_vsh_batch())
+        return;
+
+    if (!s_xf) {
+        size_t bytes = (size_t)NV_MAX_INDICES * sizeof *s_xf;
+#if defined(_WIN32)
+        s_xf = (Nv2aVshOutput *)calloc(NV_MAX_INDICES, sizeof *s_xf);
+#else
+        /* PS5: calloc of ~12.5 MB fails in our malloc arena while raw
+         * anonymous mmap reserves work (the guest span, the top page, the
+         * tile probe -- all mmap). Allocate the buffer with mmap. */
+        /* With RADV linked, malloc is the platform's direct-memory heap
+         * (12 GiB) and flexible memory -- where anonymous mmap comes from --
+         * is the scarce pool: calloc first, mmap only as the fallback. */
+        s_xf = (Nv2aVshOutput *)calloc(NV_MAX_INDICES, sizeof *s_xf);
+        if (!s_xf) {
+            void *m = mmap(NULL, bytes, PROT_READ | PROT_WRITE,
+                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            s_xf = m == (void *)-1 ? NULL : (Nv2aVshOutput *)m;
+        }
+#endif
+        if (!s_xf) {
+            /* Once per failure streak, not per batch: per-batch lines
+             * filled the kernel log. */
+            extern int sceKernelDebugOutText(int, const char *);
+            static int _n;
+            if (_n++ < 3 || (_n % 5000) == 0) {
+                char _b[112];
+                snprintf(_b, sizeof _b, "[VSH] s_xf alloc FAILED (%zu bytes, errno %d, try %d)\n",
+                         bytes, errno, _n);
+                sceKernelDebugOutText(0, _b);
+            }
+        }
+    }
+    if (!s_xf)
+        return;

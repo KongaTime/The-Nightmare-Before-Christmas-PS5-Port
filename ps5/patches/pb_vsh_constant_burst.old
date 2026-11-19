@@ -1,0 +1,2 @@
+int oogie_pb_geometry_burst(uint32_t method, const uint32_t *src, uint32_t count)
+{

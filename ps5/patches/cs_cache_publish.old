@@ -1,0 +1,8 @@
+    if (!found && !g_cs_table_full) {
+        g_cs_table_full = 1;
+        xbox_log(XBOX_LOG_ERROR, XBOX_LOG_RTL,
+                 "critical-section table full at %d entries; further locks "
+                 "are unprotected", XBOX_CS_TABLE_SIZE);
+    }
+    return found;
+}

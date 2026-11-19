@@ -1,0 +1,5 @@
+    int i;
+
+    if (!s_gpu.texs[0].valid)
+        return;
+    for (i = 0; i < s_tex_use_count; i++) {

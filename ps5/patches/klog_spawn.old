@@ -1,0 +1,3 @@
+                    bridge_spawn_guest_thread(fn, start_context1, start_context2,
+                                              stack_top, xbox_handle_ptr,
+                                              tls_size);
